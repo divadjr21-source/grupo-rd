@@ -1,10 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Building2, Briefcase, Phone, MapPin, X, Loader2, Search } from 'lucide-react'
+import { Plus, Building2, Briefcase, Home, Phone, MapPin, X, Loader2, Search } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import { supabase } from '@/lib/supabase'
 import { mascaraTelefone } from '@/lib/constantes'
+
+const TIPOS = {
+  residencia: { nome: 'Residência', icone: Home },
+  condominio: { nome: 'Condomínio', icone: Building2 },
+  empresa: { nome: 'Empresa', icone: Briefcase },
+}
 
 const VAZIO = { nome: '', tipo: 'condominio', responsavel: '', telefone: '', email: '', endereco: '', observacoes: '' }
 
@@ -67,7 +73,7 @@ export default function Clientes() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {lista.map((c) => {
-              const Icone = c.tipo === 'empresa' ? Briefcase : Building2
+              const Icone = (TIPOS[c.tipo] || TIPOS.condominio).icone
               return (
                 <button key={c.id} onClick={() => { setErro(''); setEditando({ ...VAZIO, ...c }) }}
                   className="card p-4 text-left transition hover:border-marca-200 hover:shadow-sm">
@@ -75,7 +81,7 @@ export default function Clientes() {
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500"><Icone size={18} /></div>
                     <div className="min-w-0">
                       <div className="truncate font-medium text-slate-900">{c.nome}</div>
-                      <div className="text-xs text-slate-400">{c.tipo === 'empresa' ? 'Empresa' : 'Condomínio'}{c.responsavel ? ` · ${c.responsavel}` : ''}</div>
+                      <div className="text-xs text-slate-400">{(TIPOS[c.tipo] || TIPOS.condominio).nome}{c.responsavel ? ` · ${c.responsavel}` : ''}</div>
                     </div>
                   </div>
                   <div className="mt-3 space-y-1 text-sm text-slate-500">
@@ -105,14 +111,13 @@ export default function Clientes() {
               <div>
                 <label className="label">Tipo</label>
                 <select className="input" value={editando.tipo} onChange={alterar('tipo')}>
-                  <option value="condominio">Condomínio</option>
-                  <option value="empresa">Empresa</option>
+                  {Object.entries(TIPOS).map(([k, v]) => <option key={k} value={k}>{v.nome}</option>)}
                 </select>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="label">Responsável / Síndico</label>
+                <label className="label">{editando.tipo === 'residencia' ? 'Morador / Contato' : 'Responsável / Síndico'}</label>
                 <input className="input" value={editando.responsavel || ''} onChange={alterar('responsavel')} />
               </div>
               <div>

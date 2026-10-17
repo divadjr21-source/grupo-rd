@@ -107,9 +107,9 @@ export default function AbrirChamado() {
           </div>
 
           <div>
-            <label className="label" htmlFor="nome">Nome / Condomínio / Empresa</label>
+            <label className="label" htmlFor="nome">Seu nome (e do condomínio ou empresa, se houver)</label>
             <input id="nome" className="input" required value={form.nome} onChange={alterar('nome')}
-              placeholder="Ex.: João — Condomínio Jardim das Flores" />
+              placeholder="Ex.: Maria Souza  ou  João — Condomínio das Flores" />
           </div>
 
           <div>
@@ -121,14 +121,14 @@ export default function AbrirChamado() {
           <div>
             <label className="label" htmlFor="endereco">Endereço completo</label>
             <input id="endereco" className="input" required value={form.endereco} onChange={alterar('endereco')}
-              placeholder="Rua, número, bairro, cidade" />
+              placeholder="Rua, número, apto/bloco, bairro, cidade" />
           </div>
 
           <div>
             <label className="label" htmlFor="descricao">O que precisa ser feito?</label>
             <textarea id="descricao" className="input min-h-[120px]" required maxLength={3000}
               value={form.descricao} onChange={alterar('descricao')}
-              placeholder="Descreva o serviço e o local (bloco, área, andar…)." />
+              placeholder="Ex.: limpeza completa de apartamento com 2 quartos; poda do jardim da casa; limpeza da garagem do condomínio." />
           </div>
 
           <div>

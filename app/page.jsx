@@ -10,7 +10,7 @@ export default function Inicio() {
       <main className="mx-auto max-w-5xl px-4">
         <section className="pb-12 pt-14 text-center sm:pt-20">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-marca-50 px-3 py-1 text-xs font-medium text-marca-700 ring-1 ring-inset ring-marca-200">
-            Condomínios e empresas
+            Residências, condomínios e empresas
           </span>
           <h1 className="mx-auto mt-5 max-w-2xl text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
             Limpeza e jardinagem sem complicação.
@@ -36,7 +36,7 @@ export default function Inicio() {
             </div>
             <h2 className="mt-4 font-semibold text-slate-900">Limpeza</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Áreas comuns, escritórios, garagens, vidros e limpeza pós-obra.
+              Casas e apartamentos, áreas comuns de condomínios, escritórios, vidros e limpeza pós-obra.
             </p>
           </div>
           <div className="card p-6">
@@ -45,7 +45,7 @@ export default function Inicio() {
             </div>
             <h2 className="mt-4 font-semibold text-slate-900">Jardinagem</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Poda, roçagem, manutenção de jardins e paisagismo.
+              Jardins de casas, condomínios e empresas: poda, roçagem, manutenção e paisagismo.
             </p>
           </div>
         </section>

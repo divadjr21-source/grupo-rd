@@ -2,7 +2,7 @@ import './globals.css'
 
 export const metadata = {
   title: 'Grupo RD — Limpeza & Jardinagem',
-  description: 'Solicite serviços de limpeza e jardinagem para seu condomínio ou empresa.',
+  description: 'Solicite serviços de limpeza e jardinagem para sua casa, condomínio ou empresa.',
 }
 
 export const viewport = {

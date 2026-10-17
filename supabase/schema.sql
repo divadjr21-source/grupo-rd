@@ -143,6 +143,11 @@ create policy equipe_propria on public.chamado_equipe for select to authenticate
 -- FUNÇÕES PÚBLICAS (usadas sem login)
 -- ---------------------------------------------------------------------
 
+-- Clientes também podem ser residências (casas e apartamentos)
+alter table public.clientes drop constraint if exists clientes_tipo_check;
+alter table public.clientes add constraint clientes_tipo_check
+  check (tipo in ('residencia', 'condominio', 'empresa'));
+
 -- Data e período desejados pelo cliente (também funciona em bancos já criados)
 alter table public.chamados add column if not exists data_desejada date;
 alter table public.chamados add column if not exists periodo_desejado text;
@@ -226,6 +231,10 @@ revoke all on function public.atualizar_servico(uuid, text, text, text[]) from p
 grant execute on function public.abrir_chamado(text, text, text, text, text, text[], date, text) to anon, authenticated;
 grant execute on function public.consultar_chamado(text, text) to anon, authenticated;
 grant execute on function public.atualizar_servico(uuid, text, text, text[]) to authenticated;
+
+-- Permissões das tabelas para usuários logados (as regras acima limitam o que cada um vê)
+grant select, insert, update, delete on public.perfis, public.clientes, public.chamados, public.chamado_equipe to authenticated;
+grant usage, select on sequence public.chamado_seq to authenticated;
 
 -- ---------------------------------------------------------------------
 -- ARMAZENAMENTO DE FOTOS E VÍDEOS (limite de 50 MB por arquivo)
