@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Loader2, Sparkles, Trees, Layers, HelpCircle } from 'lucide-react'
+import { CheckCircle2, Loader2, Sparkles, Trees, Hammer, Layers, HelpCircle } from 'lucide-react'
 import CabecalhoPublico from '@/components/CabecalhoPublico'
 import { SeletorArquivos } from '@/components/Arquivos'
 import { supabase } from '@/lib/supabase'
@@ -12,7 +12,8 @@ import { mascaraTelefone, hojeISO, PERIODOS } from '@/lib/constantes'
 const OPCOES = [
   { valor: 'limpeza', nome: 'Limpeza', icone: Sparkles },
   { valor: 'jardinagem', nome: 'Jardinagem', icone: Trees },
-  { valor: 'limpeza_e_jardinagem', nome: 'Os dois', icone: Layers },
+  { valor: 'reforma', nome: 'Reforma geral', icone: Hammer },
+  { valor: 'limpeza_e_jardinagem', nome: 'Limpeza + jardim', icone: Layers },
   { valor: 'outro', nome: 'Outro', icone: HelpCircle },
 ]
 
@@ -57,7 +58,7 @@ export default function AbrirChamado() {
 
   if (protocolo) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="bg-foto bg-foto-limpeza min-h-screen">
         <CabecalhoPublico />
         <main className="mx-auto max-w-md px-4 py-12">
           <div className="card p-8 text-center">
@@ -79,16 +80,16 @@ export default function AbrirChamado() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="bg-foto bg-foto-limpeza min-h-screen">
       <CabecalhoPublico />
       <main className="mx-auto max-w-xl px-4 py-8">
-        <h1 className="titulo-pagina">Solicitar serviço</h1>
-        <p className="mt-1 text-sm text-slate-500">Preencha os dados abaixo. Nossa equipe retorna em breve.</p>
+        <h1 className="titulo-pagina text-white">Solicitar serviço</h1>
+        <p className="mt-1 text-sm text-slate-200">Preencha os dados abaixo. Nossa equipe retorna em breve.</p>
 
-        <form onSubmit={enviar} className="card mt-6 space-y-5 p-5 sm:p-6">
+        <form onSubmit={enviar} className="card mt-6 shadow-2xl space-y-5 p-5 sm:p-6">
           <div>
             <span className="label">Tipo de serviço</span>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
               {OPCOES.map(({ valor, nome, icone: Icone }) => (
                 <button
                   key={valor}
@@ -128,7 +129,7 @@ export default function AbrirChamado() {
             <label className="label" htmlFor="descricao">O que precisa ser feito?</label>
             <textarea id="descricao" className="input min-h-[120px]" required maxLength={3000}
               value={form.descricao} onChange={alterar('descricao')}
-              placeholder="Ex.: limpeza completa de apartamento com 2 quartos; poda do jardim da casa; limpeza da garagem do condomínio." />
+              placeholder="Ex.: limpeza completa de apartamento com 2 quartos; poda do jardim; pintura de 2 cômodos; troca de piso do banheiro." />
           </div>
 
           <div>

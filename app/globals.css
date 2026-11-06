@@ -26,4 +26,24 @@
   .btn-secundario { @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50; }
   .btn-perigo { @apply btn border border-red-200 bg-white text-red-600 hover:bg-red-50; }
   .titulo-pagina { @apply text-2xl font-semibold tracking-tight text-slate-900; }
+
+  /* Fundo com foto escurecida (telas públicas e login) */
+  .bg-foto {
+    background-color: #0f172a;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+  .bg-foto-capa {
+    background-image: linear-gradient(rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.62)),
+      url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=2000&q=70');
+  }
+  .bg-foto-limpeza {
+    background-image: linear-gradient(rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.62)),
+      url('https://images.unsplash.com/photo-1758273238415-01ec03d9ef27?auto=format&fit=crop&w=2000&q=70');
+  }
+  .bg-foto-jardinagem {
+    background-image: linear-gradient(rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.62)),
+      url('https://images.unsplash.com/photo-1779636489740-6077a4198be6?auto=format&fit=crop&w=2000&q=70');
+  }
 }

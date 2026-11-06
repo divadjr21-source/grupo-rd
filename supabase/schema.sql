@@ -143,6 +143,11 @@ create policy equipe_propria on public.chamado_equipe for select to authenticate
 -- FUNÇÕES PÚBLICAS (usadas sem login)
 -- ---------------------------------------------------------------------
 
+-- Serviço de reforma geral
+alter table public.chamados drop constraint if exists chamados_servico_check;
+alter table public.chamados add constraint chamados_servico_check
+  check (servico in ('limpeza', 'jardinagem', 'limpeza_e_jardinagem', 'reforma', 'outro'));
+
 -- Clientes também podem ser residências (casas e apartamentos)
 alter table public.clientes drop constraint if exists clientes_tipo_check;
 alter table public.clientes add constraint clientes_tipo_check

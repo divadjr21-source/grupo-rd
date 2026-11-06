@@ -41,11 +41,11 @@ export default function Acompanhar() {
   const indiceAtual = resultado ? ETAPAS.findIndex((e) => e.chave === resultado.status) : -1
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="bg-foto bg-foto-jardinagem min-h-screen">
       <CabecalhoPublico />
       <main className="mx-auto max-w-xl px-4 py-8">
-        <h1 className="titulo-pagina">Acompanhar pedido</h1>
-        <p className="mt-1 text-sm text-slate-500">Informe o protocolo e o telefone usados na solicitação.</p>
+        <h1 className="titulo-pagina text-white">Acompanhar pedido</h1>
+        <p className="mt-1 text-sm text-slate-200">Informe o protocolo e o telefone usados na solicitação.</p>
 
         <form onSubmit={buscar} className="card mt-6 grid gap-4 p-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end sm:p-6">
           <div>

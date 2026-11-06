@@ -50,10 +50,10 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4">
+    <div className="bg-foto bg-foto-capa flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex justify-center"><Logo subtitulo="Área da Equipe" /></div>
-        <form onSubmit={entrar} className="card space-y-4 p-6">
+        <div className="mb-6 flex justify-center"><div className="rounded-2xl bg-white px-4 py-2.5 shadow-lg"><Logo subtitulo="Área da Equipe" /></div></div>
+        <form onSubmit={entrar} className="card space-y-4 p-6 shadow-2xl">
           <div>
             <label className="label" htmlFor="email">E-mail</label>
             <input id="email" type="email" className="input" required autoComplete="email"
@@ -69,7 +69,7 @@ export default function Login() {
             {entrando ? <Loader2 size={18} className="animate-spin" /> : null} Entrar
           </button>
         </form>
-        <Link href="/" className="mt-4 flex items-center justify-center gap-1 text-sm text-slate-500 hover:text-slate-700">
+        <Link href="/" className="mt-4 flex items-center justify-center gap-1 text-sm text-slate-200 hover:text-white">
           <ArrowLeft size={15} /> Voltar ao início
         </Link>
       </div>
