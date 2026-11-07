@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { LogOut } from 'lucide-react'
 import Logo from '@/components/Logo'
 import { BotaoInstalar } from '@/components/AppInstalavel'
+import { BotaoNotificacoes } from '@/components/Notificacoes'
 import Carregando from '@/components/Carregando'
 import { useSessao, sair } from '@/lib/useSessao'
 
@@ -18,6 +19,7 @@ export default function LayoutEquipe({ children }) {
           <Link href="/equipe"><Logo subtitulo={`Olá, ${perfil.nome.split(' ')[0]}`} /></Link>
           <div className="flex items-center gap-2">
             <BotaoInstalar className="btn-primario px-3 py-2" />
+            <BotaoNotificacoes perfilId={perfil.id} compacto className="btn-secundario px-2.5 py-2" />
             <button onClick={sair} className="btn-secundario px-3 py-2"><LogOut size={16} /> Sair</button>
           </div>
         </div>

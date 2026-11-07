@@ -50,6 +50,7 @@ export default function AbrirChamado() {
         p_periodo: form.data_desejada ? form.periodo : null,
       })
       if (error) throw new Error(error.message)
+      fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'chamado_novo', protocolo: data }) }).catch(() => {})
       setProtocolo(data)
     } catch (err) {
       setErro(err.message || 'Não foi possível enviar. Tente novamente.')

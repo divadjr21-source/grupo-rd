@@ -9,7 +9,7 @@ import StatusBadge from '@/components/StatusBadge'
 import { Galeria, SeletorArquivos } from '@/components/Arquivos'
 import { supabase } from '@/lib/supabase'
 import { enviarArquivos } from '@/lib/upload'
-import { SERVICOS, formatarData, linkMapa } from '@/lib/constantes'
+import { SERVICOS, PERIODOS_AGENDA, formatarData, linkMapa } from '@/lib/constantes'
 
 export default function ServicoDetalhe() {
   const { id } = useParams()
@@ -45,6 +45,14 @@ export default function ServicoDetalhe() {
         p_id: chamado.id, p_status: status, p_relatorio: relatorio, p_fotos: fotos,
       })
       if (error) throw new Error(error.message)
+      if (status === 'concluido') {
+        const { data: { session } } = await supabase.auth.getSession()
+        fetch('/api/notificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ tipo: 'concluido', chamado_id: chamado.id }),
+        }).catch(() => {})
+      }
       setArquivos([])
       await carregar()
     } catch (err) {
@@ -73,7 +81,7 @@ export default function ServicoDetalhe() {
 
         <div className="mt-4 space-y-2.5 text-sm">
           {chamado.data_agendada && (
-            <div className="flex items-center gap-2 text-slate-700"><CalendarDays size={16} className="text-slate-400" /> {formatarData(chamado.data_agendada)}</div>
+            <div className="flex items-center gap-2 text-slate-700"><CalendarDays size={16} className="text-slate-400" /> {formatarData(chamado.data_agendada)}{chamado.periodo_agendado ? ` · ${PERIODOS_AGENDA[chamado.periodo_agendado]}` : ''}</div>
           )}
           <a href={linkMapa(chamado.endereco)} target="_blank" rel="noreferrer" className="flex items-start gap-2 text-marca-700 underline-offset-2 hover:underline">
             <MapPin size={16} className="mt-0.5 shrink-0" /> {chamado.endereco}

@@ -16,7 +16,7 @@ export default function Chamados() {
   useEffect(() => {
     supabase
       .from('chamados')
-      .select('id, protocolo, nome_solicitante, telefone, endereco, servico, status, data_agendada, data_desejada, periodo_desejado, criado_em, clientes(nome)')
+      .select('id, protocolo, nome_solicitante, telefone, endereco, servico, status, data_agendada, periodo_agendado, data_desejada, periodo_desejado, criado_em, clientes(nome)')
       .order('criado_em', { ascending: false })
       .limit(1000)
       .then(({ data }) => setChamados(data || []))

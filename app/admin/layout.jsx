@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, Building2, Users, Building, LogOut } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, CalendarDays, FileText, Building2, Users, Building, LogOut } from 'lucide-react'
+import { BotaoNotificacoes } from '@/components/Notificacoes'
 import Logo from '@/components/Logo'
 import Carregando from '@/components/Carregando'
 import { useSessao, sair } from '@/lib/useSessao'
@@ -10,6 +11,8 @@ import { useSessao, sair } from '@/lib/useSessao'
 const MENU = [
   { href: '/admin', nome: 'Início', icone: LayoutDashboard },
   { href: '/admin/chamados', nome: 'Chamados', icone: ClipboardList },
+  { href: '/admin/agenda', nome: 'Agenda', icone: CalendarDays },
+  { href: '/admin/orcamentos', nome: 'Orçamentos', icone: FileText },
   { href: '/admin/clientes', nome: 'Clientes', icone: Building2 },
   { href: '/admin/usuarios', nome: 'Usuários', icone: Users },
   { href: '/admin/empresa', nome: 'Empresa', icone: Building },
@@ -38,6 +41,7 @@ export default function LayoutAdmin({ children }) {
           ))}
         </nav>
         <div className="border-t border-slate-100 p-3">
+          <BotaoNotificacoes perfilId={perfil.id} className="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50" />
           <div className="px-3 pb-2 text-xs text-slate-400">{perfil.nome}</div>
           <button onClick={sair} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50">
             <LogOut size={18} /> Sair
@@ -49,7 +53,10 @@ export default function LayoutAdmin({ children }) {
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <Logo subtitulo="Painel Admin" />
-          <button onClick={sair} className="rounded-lg p-2 text-slate-500" aria-label="Sair"><LogOut size={19} /></button>
+          <div className="flex items-center gap-1">
+            <BotaoNotificacoes perfilId={perfil.id} compacto className="rounded-lg p-2 text-slate-500" />
+            <button onClick={sair} className="rounded-lg p-2 text-slate-500" aria-label="Sair"><LogOut size={19} /></button>
+          </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-2 pb-2">
           {MENU.map(({ href, nome, icone: Icone }) => (

@@ -286,3 +286,134 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.contato_empresa() from public;
 grant execute on function public.contato_empresa() to anon, authenticated;
+
+-- =====================================================================
+-- AGENDA, ORÇAMENTOS E NOTIFICAÇÕES
+-- =====================================================================
+
+-- Período do serviço agendado (manhã, tarde ou dia todo)
+alter table public.chamados add column if not exists periodo_agendado text;
+alter table public.chamados drop constraint if exists chamados_periodo_agendado_check;
+alter table public.chamados add constraint chamados_periodo_agendado_check
+  check (periodo_agendado is null or periodo_agendado in ('manha', 'tarde', 'integral'));
+-- Controle para não avisar o mesmo chamado novo duas vezes
+alter table public.chamados add column if not exists avisado_em timestamptz;
+create index if not exists chamados_data_idx on public.chamados (data_agendada);
+
+-- ORÇAMENTOS (um por chamado; o cliente aprova pelo link)
+create table if not exists public.orcamentos (
+  id            uuid primary key default gen_random_uuid(),
+  chamado_id    uuid not null unique references public.chamados on delete cascade,
+  token         text not null unique default replace(gen_random_uuid()::text, '-', ''),
+  itens         jsonb not null default '[]',
+  desconto      numeric(12,2) not null default 0,
+  validade      date,
+  prazo         text,
+  condicoes     text,
+  observacoes   text,
+  status        text not null default 'rascunho' check (status in ('rascunho', 'enviado', 'aprovado', 'recusado')),
+  resposta_obs  text,
+  criado_em     timestamptz not null default now(),
+  atualizado_em timestamptz not null default now(),
+  enviado_em    timestamptz,
+  respondido_em timestamptz,
+  avisado_em    timestamptz
+);
+
+drop trigger if exists orcamentos_atualizado on public.orcamentos;
+create trigger orcamentos_atualizado before update on public.orcamentos
+  for each row execute function public.tocar_atualizado_em();
+
+alter table public.orcamentos enable row level security;
+drop policy if exists orcamentos_admin on public.orcamentos;
+create policy orcamentos_admin on public.orcamentos for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+grant select, insert, update, delete on public.orcamentos to authenticated;
+
+-- Total do orçamento (itens: [{descricao, qtd, valor}])
+create or replace function public.total_orcamento(p_itens jsonb, p_desconto numeric) returns numeric
+language sql immutable as $$
+  select greatest(coalesce(sum((i->>'qtd')::numeric * (i->>'valor')::numeric), 0) - coalesce(p_desconto, 0), 0)
+  from jsonb_array_elements(coalesce(p_itens, '[]'::jsonb)) i;
+$$;
+
+-- Ver orçamento pelo link (cliente, sem login)
+create or replace function public.ver_orcamento(p_token text) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'status', o.status, 'itens', o.itens, 'desconto', o.desconto,
+    'total', public.total_orcamento(o.itens, o.desconto),
+    'validade', o.validade, 'prazo', o.prazo, 'condicoes', o.condicoes, 'observacoes', o.observacoes,
+    'resposta_obs', o.resposta_obs, 'enviado_em', o.enviado_em, 'respondido_em', o.respondido_em,
+    'protocolo', c.protocolo, 'nome', c.nome_solicitante, 'endereco', c.endereco,
+    'servico', c.servico, 'descricao', c.descricao,
+    'empresa', (select to_jsonb(e) - 'id' - 'atualizado_em' from empresa e where e.id = 1)
+  )
+  from orcamentos o join chamados c on c.id = o.chamado_id
+  where o.token = p_token and o.status <> 'rascunho';
+$$;
+
+-- Cliente aprova ou recusa
+create or replace function public.responder_orcamento(p_token text, p_aprovar boolean, p_obs text default null)
+returns text
+language plpgsql security definer set search_path = public as $$
+declare v_orc orcamentos%rowtype;
+begin
+  select * into v_orc from orcamentos where token = p_token for update;
+  if not found or v_orc.status = 'rascunho' then raise exception 'Orçamento não encontrado.'; end if;
+  if v_orc.status <> 'enviado' then raise exception 'Este orçamento já foi respondido.'; end if;
+  if v_orc.validade is not null and v_orc.validade < (now() at time zone 'America/Sao_Paulo')::date then
+    raise exception 'Este orçamento venceu. Peça um novo orçamento à empresa.';
+  end if;
+
+  update orcamentos set
+    status = case when p_aprovar then 'aprovado' else 'recusado' end,
+    resposta_obs = nullif(trim(coalesce(p_obs, '')), ''),
+    respondido_em = now(), avisado_em = null
+  where id = v_orc.id;
+
+  -- Aprovado e já com data e equipe: o serviço passa a "agendado"
+  if p_aprovar then
+    update chamados c set status = 'agendado'
+    where c.id = v_orc.chamado_id and c.status = 'aberto' and c.data_agendada is not null
+      and exists (select 1 from chamado_equipe e where e.chamado_id = c.id);
+  end if;
+
+  return case when p_aprovar then 'aprovado' else 'recusado' end;
+end $$;
+
+revoke all on function public.ver_orcamento(text) from public;
+revoke all on function public.responder_orcamento(text, boolean, text) from public;
+grant execute on function public.ver_orcamento(text) to anon, authenticated;
+grant execute on function public.responder_orcamento(text, boolean, text) to anon, authenticated;
+
+-- Acompanhar pedido: agora mostra período e o link do orçamento
+drop function if exists public.consultar_chamado(text, text);
+create or replace function public.consultar_chamado(p_protocolo text, p_telefone text)
+returns table (protocolo text, servico text, status text, data_agendada date, periodo_agendado text,
+               data_desejada date, periodo_desejado text,
+               criado_em timestamptz, concluido_em timestamptz,
+               orcamento_token text, orcamento_status text)
+language sql stable security definer set search_path = public as $$
+  select c.protocolo, c.servico, c.status, c.data_agendada, c.periodo_agendado,
+         c.data_desejada, c.periodo_desejado, c.criado_em, c.concluido_em,
+         case when o.status <> 'rascunho' then o.token end, case when o.status <> 'rascunho' then o.status end
+  from chamados c left join orcamentos o on o.chamado_id = c.id
+  where upper(c.protocolo) = upper(trim(p_protocolo))
+    and regexp_replace(c.telefone, '\D', '', 'g') = regexp_replace(p_telefone, '\D', '', 'g');
+$$;
+revoke all on function public.consultar_chamado(text, text) from public;
+grant execute on function public.consultar_chamado(text, text) to anon, authenticated;
+
+-- NOTIFICAÇÕES NO CELULAR (cada aparelho que ativou os avisos)
+create table if not exists public.push_inscricoes (
+  endpoint   text primary key,
+  perfil_id  uuid not null references public.perfis on delete cascade,
+  inscricao  jsonb not null,
+  criado_em  timestamptz not null default now()
+);
+alter table public.push_inscricoes enable row level security;
+drop policy if exists push_proprias on public.push_inscricoes;
+create policy push_proprias on public.push_inscricoes for all to authenticated
+  using (perfil_id = auth.uid()) with check (perfil_id = auth.uid());
+grant select, insert, update, delete on public.push_inscricoes to authenticated;

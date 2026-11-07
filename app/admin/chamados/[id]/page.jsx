@@ -3,12 +3,25 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Phone, MapPin, MessageCircle, Loader2, Check, Users } from 'lucide-react'
+import { ArrowLeft, Phone, MapPin, MessageCircle, Loader2, Check, Users, AlertTriangle, Send } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import StatusBadge from '@/components/StatusBadge'
 import { Galeria } from '@/components/Arquivos'
 import { supabase } from '@/lib/supabase'
-import { SERVICOS, STATUS, PERIODOS, formatarData, linkWhatsApp, linkMapa } from '@/lib/constantes'
+import EditorOrcamento from '@/components/EditorOrcamento'
+import { SERVICOS, STATUS, PERIODOS, PERIODOS_AGENDA, formatarData, linkWhatsApp, linkMapa, periodosConflitam } from '@/lib/constantes'
+import { mensagensCliente } from '@/lib/mensagens'
+import { useEmpresa } from '@/lib/useEmpresa'
+
+async function avisarEquipe(chamadoId, funcionarios) {
+  if (!funcionarios.length) return
+  const { data: { session } } = await supabase.auth.getSession()
+  fetch('/api/notificar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+    body: JSON.stringify({ tipo: 'equipe', chamado_id: chamadoId, funcionarios }),
+  }).catch(() => {})
+}
 
 export default function DetalheChamado() {
   const { id } = useParams()
@@ -20,29 +33,56 @@ export default function DetalheChamado() {
   const [form, setForm] = useState(null)
   const [salvando, setSalvando] = useState(false)
   const [mensagem, setMensagem] = useState('')
+  const [orcamento, setOrcamento] = useState(null)
+  const [equipeSalva, setEquipeSalva] = useState([])
+  const [conflitos, setConflitos] = useState([])
+  const empresa = useEmpresa()
 
   useEffect(() => {
     async function carregar() {
-      const [c, cl, f, e] = await Promise.all([
+      const [c, cl, f, e, o] = await Promise.all([
         supabase.from('chamados').select('*').eq('id', id).single(),
         supabase.from('clientes').select('id, nome').order('nome'),
         supabase.from('perfis').select('id, nome, ativo').eq('papel', 'funcionario').order('nome'),
         supabase.from('chamado_equipe').select('funcionario_id').eq('chamado_id', id),
+        supabase.from('orcamentos').select('*').eq('chamado_id', id).maybeSingle(),
       ])
       if (!c.data) return setNaoEncontrado(true)
       setChamado(c.data)
       setForm({
         status: c.data.status,
         data_agendada: c.data.data_agendada || '',
+        periodo_agendado: c.data.periodo_agendado || c.data.periodo_desejado?.replace('qualquer', '') || '',
         cliente_id: c.data.cliente_id || '',
         observacoes_admin: c.data.observacoes_admin || '',
       })
       setClientes(cl.data || [])
       setFuncionarios(f.data || [])
       setEquipe((e.data || []).map((x) => x.funcionario_id))
+      setEquipeSalva((e.data || []).map((x) => x.funcionario_id))
+      setOrcamento(o.data || null)
     }
     carregar()
   }, [id])
+
+  // Verifica se alguém da equipe já está em outro serviço no mesmo dia e período
+  useEffect(() => {
+    if (!form?.data_agendada || equipe.length === 0) { setConflitos([]); return }
+    let ativo = true
+    supabase
+      .from('chamado_equipe')
+      .select('funcionario_id, perfis(nome), chamados!inner(id, protocolo, data_agendada, periodo_agendado, status)')
+      .in('funcionario_id', equipe)
+      .eq('chamados.data_agendada', form.data_agendada)
+      .neq('chamado_id', id)
+      .then(({ data }) => {
+        if (!ativo) return
+        setConflitos((data || []).filter((x) =>
+          !['concluido', 'cancelado'].includes(x.chamados.status) &&
+          periodosConflitam(form.periodo_agendado || null, x.chamados.periodo_agendado)))
+      })
+    return () => { ativo = false }
+  }, [form?.data_agendada, form?.periodo_agendado, equipe, id])
 
   if (naoEncontrado) return <p className="text-slate-500">Chamado não encontrado.</p>
   if (!chamado || !form) return <Carregando />
@@ -61,6 +101,7 @@ export default function DetalheChamado() {
     const atualizacao = {
       status,
       data_agendada: form.data_agendada || null,
+      periodo_agendado: form.periodo_agendado || null,
       cliente_id: form.cliente_id || null,
       observacoes_admin: form.observacoes_admin || null,
       concluido_em: status === 'concluido' ? (chamado.concluido_em || new Date().toISOString()) : null,
@@ -83,6 +124,10 @@ export default function DetalheChamado() {
       }
     }
 
+    // Avisa no celular quem entrou agora na equipe
+    avisarEquipe(id, equipe.filter((fid) => !equipeSalva.includes(fid)))
+    setEquipeSalva(equipe)
+
     setChamado(data)
     setForm({ ...form, status: data.status })
     setSalvando(false)
@@ -90,7 +135,10 @@ export default function DetalheChamado() {
     setTimeout(() => setMensagem(''), 2500)
   }
 
-  const textoWhats = `Olá! Aqui é do Grupo RD, sobre o seu pedido #${chamado.protocolo}.`
+  const textoWhats = `Olá! Aqui é do ${empresa?.nome || 'Grupo RD'}, sobre o seu pedido #${chamado.protocolo}.`
+  const site = typeof window !== 'undefined' ? window.location.origin : ''
+  const mensagens = mensagensCliente(chamado, empresa, site, orcamento)
+  const enviarWhats = (texto) => window.open(linkWhatsApp(chamado.telefone, texto), '_blank')
   const funcionariosVisiveis = funcionarios.filter((f) => f.ativo || equipe.includes(f.id))
 
   return (
@@ -128,6 +176,28 @@ export default function DetalheChamado() {
             <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{chamado.descricao}</p>
             <h3 className="mt-5 text-sm font-semibold text-slate-900">Fotos do cliente</h3>
             <div className="mt-2"><Galeria links={chamado.fotos} /></div>
+          </section>
+
+          <EditorOrcamento
+            chamadoId={id}
+            orcamento={orcamento}
+            onAlterado={setOrcamento}
+            onEnviarWhatsApp={(o) => {
+              const m = mensagensCliente(chamado, empresa, site, o).find((x) => x.chave === 'orcamento')
+              if (m) enviarWhats(m.texto)
+            }}
+          />
+
+          <section className="card p-5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Send size={15} /> Avisar o cliente no WhatsApp</h3>
+            <p className="mt-1 text-xs text-slate-500">Mensagens prontas. Toque, confira no WhatsApp e envie.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {mensagens.map((m) => (
+                <button key={m.chave} onClick={() => enviarWhats(m.texto)} className="btn-secundario px-3 py-1.5">
+                  <MessageCircle size={14} className="text-marca-600" /> {m.nome}
+                </button>
+              ))}
+            </div>
           </section>
 
           {(chamado.relatorio_equipe || chamado.fotos_conclusao?.length > 0) && (
@@ -172,6 +242,15 @@ export default function DetalheChamado() {
                 )}
               </div>
             )}
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              {Object.entries(PERIODOS_AGENDA).map(([k, v]) => (
+                <button key={k} type="button" onClick={() => setForm({ ...form, periodo_agendado: form.periodo_agendado === k ? '' : k })}
+                  className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
+                    form.periodo_agendado === k ? 'border-marca-500 bg-marca-50 text-marca-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                  {v}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -207,6 +286,20 @@ export default function DetalheChamado() {
               </div>
             )}
           </div>
+
+          {conflitos.length > 0 && (
+            <div className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800 ring-1 ring-red-200">
+              <div className="flex items-center gap-1.5 font-medium"><AlertTriangle size={15} /> Atenção: conflito de agenda</div>
+              <ul className="mt-1 space-y-0.5 text-xs">
+                {conflitos.map((c, i) => (
+                  <li key={i}>
+                    {c.perfis?.nome} já está no <Link href={`/admin/chamados/${c.chamados.id}`} className="underline">#{c.chamados.protocolo}</Link>
+                    {c.chamados.periodo_agendado ? ` (${PERIODOS_AGENDA[c.chamados.periodo_agendado]})` : ' (sem período)'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div>
             <label className="label">Observações internas</label>

@@ -1,6 +1,6 @@
-// Service worker simples: permite instalar o app e mostra um aviso quando estiver sem internet.
+// Service worker: permite instalar o app, mostra um aviso sem internet e recebe as notificações.
 // Não guarda dados dos chamados em cache — tudo continua vindo do servidor.
-const CACHE = 'grupo-rd-v1'
+const CACHE = 'grupo-rd-v2'
 const OFFLINE = '/offline.html'
 
 self.addEventListener('install', (event) => {
@@ -20,4 +20,36 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(fetch(event.request).catch(() => caches.match(OFFLINE)))
   }
+})
+
+// Notificação recebida
+self.addEventListener('push', (event) => {
+  let dados = {}
+  try { dados = event.data ? event.data.json() : {} } catch { dados = { corpo: event.data && event.data.text() } }
+  event.waitUntil(
+    self.registration.showNotification(dados.titulo || 'Grupo RD', {
+      body: dados.corpo || '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: dados.url || '/' },
+      vibrate: [120, 60, 120],
+    })
+  )
+})
+
+// Toque na notificação: abre a tela certa
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = (event.notification.data && event.notification.data.url) || '/'
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
+      for (const j of janelas) {
+        if ('focus' in j) {
+          j.navigate(url)
+          return j.focus()
+        }
+      }
+      return self.clients.openWindow(url)
+    })
+  )
 })

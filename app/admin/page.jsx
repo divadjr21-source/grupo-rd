@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Inbox, CalendarDays, Hammer, CheckCircle2, Plus } from 'lucide-react'
+import { Inbox, CalendarDays, Hammer, CheckCircle2, Plus, FileCheck2, ChevronRight } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import ListaChamados from '@/components/ListaChamados'
 import { supabase } from '@/lib/supabase'
+import { totalDe } from '@/components/EditorOrcamento'
+import { formatarMoeda, formatarData } from '@/lib/constantes'
 
 function hojeISO() {
   const d = new Date()
@@ -14,14 +16,23 @@ function hojeISO() {
 
 export default function Dashboard() {
   const [chamados, setChamados] = useState(null)
+  const [aprovados, setAprovados] = useState([])
 
   useEffect(() => {
     supabase
       .from('chamados')
-      .select('id, protocolo, nome_solicitante, servico, status, data_agendada, data_desejada, periodo_desejado, criado_em, concluido_em, clientes(nome)')
+      .select('id, protocolo, nome_solicitante, servico, status, data_agendada, periodo_agendado, data_desejada, periodo_desejado, criado_em, concluido_em, clientes(nome)')
       .order('criado_em', { ascending: false })
       .limit(500)
       .then(({ data }) => setChamados(data || []))
+    // Orçamentos aprovados que ainda precisam de data/equipe
+    supabase
+      .from('orcamentos')
+      .select('id, itens, desconto, respondido_em, chamados(id, protocolo, nome_solicitante, status, data_agendada, clientes(nome))')
+      .eq('status', 'aprovado')
+      .order('respondido_em', { ascending: false })
+      .limit(50)
+      .then(({ data }) => setAprovados((data || []).filter((o) => o.chamados && (o.chamados.status === 'aberto' || !o.chamados.data_agendada))))
   }, [])
 
   if (!chamados) return <Carregando />
@@ -59,6 +70,29 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {aprovados.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
+            <FileCheck2 size={18} className="text-marca-600" /> Orçamentos aprovados — falta agendar
+          </h2>
+          <ul className="card divide-y divide-slate-100 overflow-hidden ring-2 ring-marca-100">
+            {aprovados.map((o) => (
+              <li key={o.id}>
+                <Link href={`/admin/chamados/${o.chamados.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-slate-400">#{o.chamados.protocolo}</div>
+                    <div className="truncate font-medium text-slate-900">{o.chamados.clientes?.nome || o.chamados.nome_solicitante}</div>
+                    <div className="text-xs text-slate-500">Aprovado em {formatarData(o.respondido_em, true)}</div>
+                  </div>
+                  <div className="font-semibold text-marca-700">{formatarMoeda(totalDe(o.itens, o.desconto))}</div>
+                  <ChevronRight size={18} className="text-slate-300" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="mt-8">
         <h2 className="mb-3 font-semibold text-slate-900">Aguardando atendimento</h2>

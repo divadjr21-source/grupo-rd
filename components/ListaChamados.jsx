@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ChevronRight, CalendarDays } from 'lucide-react'
 import StatusBadge from './StatusBadge'
-import { SERVICOS, PERIODOS, formatarData } from '@/lib/constantes'
+import { SERVICOS, PERIODOS, PERIODOS_AGENDA, formatarData } from '@/lib/constantes'
 
 export default function ListaChamados({ chamados, base = '/admin/chamados', vazio = 'Nenhum chamado.' }) {
   if (!chamados.length) {
@@ -23,7 +23,7 @@ export default function ListaChamados({ chamados, base = '/admin/chamados', vazi
               <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-sm text-slate-500">
                 <span>{SERVICOS[c.servico]}</span>
                 {c.data_agendada ? (
-                  <span className="inline-flex items-center gap-1"><CalendarDays size={13} /> {formatarData(c.data_agendada)}</span>
+                  <span className="inline-flex items-center gap-1"><CalendarDays size={13} /> {formatarData(c.data_agendada)}{c.periodo_agendado ? ` · ${PERIODOS_AGENDA[c.periodo_agendado]}` : ''}</span>
                 ) : c.data_desejada ? (
                   <span className="inline-flex items-center gap-1 text-amber-700">
                     <CalendarDays size={13} /> Cliente quer: {formatarData(c.data_desejada)}

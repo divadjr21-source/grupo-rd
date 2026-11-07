@@ -5,7 +5,8 @@ import { Search, Loader2, Check } from 'lucide-react'
 import CabecalhoPublico from '@/components/CabecalhoPublico'
 import StatusBadge from '@/components/StatusBadge'
 import { supabase } from '@/lib/supabase'
-import { SERVICOS, PERIODOS, formatarData, mascaraTelefone } from '@/lib/constantes'
+import Link from 'next/link'
+import { SERVICOS, PERIODOS, PERIODOS_AGENDA, formatarData, mascaraTelefone } from '@/lib/constantes'
 
 const ETAPAS = [
   { chave: 'aberto', nome: 'Recebido' },
@@ -90,7 +91,7 @@ export default function Acompanhar() {
                       </span>
                       <span className={feito ? 'font-medium text-slate-900' : 'text-slate-400'}>{etapa.nome}</span>
                       {etapa.chave === 'agendado' && resultado.data_agendada && (
-                        <span className="ml-auto text-sm text-slate-500">{formatarData(resultado.data_agendada)}</span>
+                        <span className="ml-auto text-sm text-slate-500">{formatarData(resultado.data_agendada)}{resultado.periodo_agendado ? ` · ${PERIODOS_AGENDA[resultado.periodo_agendado]}` : ''}</span>
                       )}
                       {etapa.chave === 'agendado' && !resultado.data_agendada && resultado.data_desejada && (
                         <span className="ml-auto text-right text-xs text-slate-400">
@@ -105,6 +106,13 @@ export default function Acompanhar() {
                   )
                 })}
               </ol>
+            )}
+
+            {resultado.orcamento_token && (
+              <Link href={`/orcamento/${resultado.orcamento_token}`}
+                className={`mt-6 flex w-full ${resultado.orcamento_status === 'enviado' ? 'btn-primario' : 'btn-secundario'}`}>
+                {resultado.orcamento_status === 'enviado' ? 'Ver e aprovar orçamento' : 'Ver orçamento'}
+              </Link>
             )}
 
             <p className="mt-6 border-t border-slate-100 pt-4 text-xs text-slate-400">

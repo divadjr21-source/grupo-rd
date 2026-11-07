@@ -13,7 +13,7 @@ export default function MeusServicos() {
     // As regras do banco já garantem que só aparecem os chamados da equipe deste funcionário
     supabase
       .from('chamados')
-      .select('id, protocolo, nome_solicitante, servico, status, data_agendada, concluido_em')
+      .select('id, protocolo, nome_solicitante, servico, status, data_agendada, periodo_agendado, concluido_em')
       .order('data_agendada', { ascending: true, nullsFirst: false })
       .limit(300)
       .then(({ data }) => setChamados(data || []))
