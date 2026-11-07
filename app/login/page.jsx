@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import Logo from '@/components/Logo'
+import { BotaoInstalar } from '@/components/AppInstalavel'
 import { supabase } from '@/lib/supabase'
 
 export default function Login() {
@@ -69,6 +70,9 @@ export default function Login() {
             {entrando ? <Loader2 size={18} className="animate-spin" /> : null} Entrar
           </button>
         </form>
+        <div className="mt-4 flex justify-center">
+          <BotaoInstalar className="btn border border-white/40 bg-white/10 px-4 py-2 text-white backdrop-blur hover:bg-white/20" />
+        </div>
         <Link href="/" className="mt-4 flex items-center justify-center gap-1 text-sm text-slate-200 hover:text-white">
           <ArrowLeft size={15} /> Voltar ao início
         </Link>
