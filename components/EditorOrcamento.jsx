@@ -29,8 +29,8 @@ function novoForm(orc) {
 }
 
 // Orçamento do chamado: montar, enviar o link e ver a resposta do cliente
-export default function EditorOrcamento({ chamadoId, orcamento, onAlterado, onEnviarWhatsApp }) {
-  const [editando, setEditando] = useState(false)
+export default function EditorOrcamento({ chamadoId, orcamento, onAlterado, onEnviarWhatsApp, iniciarEditando = false }) {
+  const [editando, setEditando] = useState(iniciarEditando && !orcamento)
   const [form, setForm] = useState(() => novoForm(orcamento))
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
@@ -175,7 +175,7 @@ export default function EditorOrcamento({ chamadoId, orcamento, onAlterado, onEn
   )
 
   return (
-    <section className="card p-5">
+    <section id="orcamento" className="card scroll-mt-4 p-5 ring-2 ring-marca-100">
       <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><FileText size={16} /> {orcamento ? 'Editar orçamento' : 'Novo orçamento'}</h3>
       {orcamento && orcamento.status !== 'rascunho' && (
         <p className="mt-1 text-xs text-amber-700">Ao reenviar, o cliente precisará aprovar novamente pelo mesmo link.</p>

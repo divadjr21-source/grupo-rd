@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Phone, MapPin, MessageCircle, Loader2, Check, Users, AlertTriangle, Send } from 'lucide-react'
 import Carregando from '@/components/Carregando'
@@ -25,6 +25,7 @@ async function avisarEquipe(chamadoId, funcionarios) {
 
 export default function DetalheChamado() {
   const { id } = useParams()
+  const abrirOrcamento = useSearchParams().get('orcamento') === 'novo'
   const [chamado, setChamado] = useState(null)
   const [naoEncontrado, setNaoEncontrado] = useState(false)
   const [clientes, setClientes] = useState([])
@@ -61,6 +62,7 @@ export default function DetalheChamado() {
       setEquipe((e.data || []).map((x) => x.funcionario_id))
       setEquipeSalva((e.data || []).map((x) => x.funcionario_id))
       setOrcamento(o.data || null)
+      if (abrirOrcamento && !o.data) setTimeout(() => document.getElementById('orcamento')?.scrollIntoView({ behavior: 'smooth' }), 300)
     }
     carregar()
   }, [id])
@@ -179,6 +181,8 @@ export default function DetalheChamado() {
           </section>
 
           <EditorOrcamento
+            key={orcamento ? 'com' : 'sem'}
+            iniciarEditando={abrirOrcamento}
             chamadoId={id}
             orcamento={orcamento}
             onAlterado={setOrcamento}

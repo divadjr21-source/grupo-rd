@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, FileText } from 'lucide-react'
+import { ChevronRight, FileText, Plus } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import { totalDe } from '@/components/EditorOrcamento'
+import NovoOrcamento from '@/components/NovoOrcamento'
 import { supabase } from '@/lib/supabase'
 import { formatarData, formatarMoeda } from '@/lib/constantes'
 
@@ -26,6 +27,7 @@ const NOME = { rascunho: 'Rascunho', enviado: 'Aguardando', aprovado: 'Aprovado'
 export default function Orcamentos() {
   const [lista, setLista] = useState(null)
   const [filtro, setFiltro] = useState('todos')
+  const [criando, setCriando] = useState(false)
 
   useEffect(() => {
     supabase
@@ -41,8 +43,14 @@ export default function Orcamentos() {
 
   return (
     <div>
-      <h1 className="titulo-pagina">Orçamentos</h1>
-      <p className="text-sm text-slate-500">Para criar um orçamento, abra o chamado e use a seção "Orçamento".</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="titulo-pagina">Orçamentos</h1>
+          <p className="text-sm text-slate-500">Monte, envie e acompanhe a resposta dos clientes.</p>
+        </div>
+        <button onClick={() => setCriando(true)} className="btn-primario"><Plus size={17} /> Novo orçamento</button>
+      </div>
+      {criando && <NovoOrcamento onFechar={() => setCriando(false)} />}
 
       {lista && (
         <div className="mt-5 grid grid-cols-2 gap-3">
@@ -66,6 +74,7 @@ export default function Orcamentos() {
         {!lista ? <Carregando /> : visiveis.length === 0 ? (
           <div className="card flex flex-col items-center gap-2 p-8 text-center text-sm text-slate-400">
             <FileText size={22} /> Nenhum orçamento aqui.
+            <button onClick={() => setCriando(true)} className="btn-primario mt-2"><Plus size={16} /> Criar o primeiro</button>
           </div>
         ) : (
           <ul className="card divide-y divide-slate-100 overflow-hidden">
