@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, MessageCircle, Loader2, Sparkles, Trees, Hammer, Layers, HelpCircle } from 'lucide-react'
+import { CheckCircle2, MessageCircle, Loader2, Sparkles, Trees, Hammer, Cctv, Layers, HelpCircle } from 'lucide-react'
 import CabecalhoPublico from '@/components/CabecalhoPublico'
 import { SeletorArquivos } from '@/components/Arquivos'
 import { supabase } from '@/lib/supabase'
@@ -14,6 +14,7 @@ const OPCOES = [
   { valor: 'limpeza', nome: 'Limpeza', icone: Sparkles },
   { valor: 'jardinagem', nome: 'Jardinagem', icone: Trees },
   { valor: 'reforma', nome: 'Reforma geral', icone: Hammer },
+  { valor: 'seguranca', nome: 'Segurança eletrônica', icone: Cctv },
   { valor: 'limpeza_e_jardinagem', nome: 'Limpeza + jardim', icone: Layers },
   { valor: 'outro', nome: 'Outro', icone: HelpCircle },
 ]
@@ -102,7 +103,7 @@ export default function AbrirChamado() {
         <form onSubmit={enviar} className="card mt-6 shadow-2xl space-y-5 p-5 sm:p-6">
           <div>
             <span className="label">Tipo de serviço</span>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {OPCOES.map(({ valor, nome, icone: Icone }) => (
                 <button
                   key={valor}
@@ -142,7 +143,7 @@ export default function AbrirChamado() {
             <label className="label" htmlFor="descricao">O que precisa ser feito?</label>
             <textarea id="descricao" className="input min-h-[120px]" required maxLength={3000}
               value={form.descricao} onChange={alterar('descricao')}
-              placeholder="Ex.: limpeza completa de apartamento com 2 quartos; poda do jardim; pintura de 2 cômodos; troca de piso do banheiro." />
+              placeholder="Ex.: limpeza completa de apartamento com 2 quartos; poda do jardim; pintura de 2 cômodos; instalar 4 câmeras no condomínio." />
           </div>
 
           <div>

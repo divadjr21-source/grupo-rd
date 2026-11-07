@@ -1,9 +1,9 @@
 // Configuração do app instalável (PWA)
 export default function manifest() {
   return {
-    name: 'Grupo RD — Limpeza, Jardinagem e Reforma',
+    name: 'Grupo RD — Limpeza, Jardinagem, Reforma e Segurança',
     short_name: 'Grupo RD',
-    description: 'Solicite e acompanhe serviços de limpeza, jardinagem e reforma.',
+    description: 'Solicite e acompanhe serviços de limpeza, jardinagem, reforma e segurança eletrônica.',
     start_url: '/',
     scope: '/',
     display: 'standalone',

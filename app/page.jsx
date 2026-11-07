@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Sparkles, Trees, Hammer, ClipboardList, Send, BadgeCheck, Clock, Users } from 'lucide-react'
+import { Sparkles, Trees, Hammer, Cctv, ClipboardList, Send, BadgeCheck, Clock, Users } from 'lucide-react'
 import CabecalhoPublico from '@/components/CabecalhoPublico'
 import RodapeEmpresa from '@/components/RodapeEmpresa'
 import { IMAGENS } from '@/lib/imagens'
@@ -23,6 +23,12 @@ const SERVICOS = [
     icone: Hammer,
     foto: IMAGENS.reforma,
   },
+  {
+    nome: 'Segurança eletrônica',
+    texto: 'Câmeras (CFTV), alarmes, cerca elétrica, interfone, portão eletrônico e controle de acesso.',
+    icone: Cctv,
+    foto: IMAGENS.seguranca,
+  },
 ]
 
 export default function Inicio() {
@@ -39,10 +45,10 @@ export default function Inicio() {
             Residências, condomínios e empresas
           </span>
           <h1 className="mt-5 max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Limpeza, jardinagem e reforma com padrão profissional.
+            Serviços para sua casa, condomínio ou empresa com padrão profissional.
           </h1>
           <p className="mt-4 max-w-lg text-lg text-slate-200">
-            Equipe treinada e uniformizada. Solicite em poucos minutos e acompanhe pelo número de protocolo.
+            Limpeza, jardinagem, reforma e segurança eletrônica com equipe treinada. Solicite em poucos minutos e acompanhe pelo protocolo.
           </p>
           <div className="mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
             <Link href="/chamado" className="btn-primario flex-1 py-3 text-base shadow-lg shadow-marca-900/30">
@@ -67,7 +73,7 @@ export default function Inicio() {
       {/* Serviços */}
       <main className="mx-auto max-w-5xl px-4 py-14">
         <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Nossos serviços</h2>
-        <div className="mt-6 grid gap-5 sm:grid-cols-3">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {SERVICOS.map(({ nome, texto, icone: Icone, foto }) => (
             <Link key={nome} href="/chamado" className="card group overflow-hidden transition hover:shadow-lg">
               <div className="relative h-44 overflow-hidden bg-slate-100">

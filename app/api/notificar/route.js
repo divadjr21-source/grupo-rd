@@ -5,7 +5,7 @@ import { VAPID_PUBLICA } from '@/lib/push'
 
 export const dynamic = 'force-dynamic'
 
-const SERVICOS = { limpeza: 'Limpeza', jardinagem: 'Jardinagem', reforma: 'Reforma geral', limpeza_e_jardinagem: 'Limpeza e jardinagem', outro: 'Serviço' }
+const SERVICOS = { limpeza: 'Limpeza', jardinagem: 'Jardinagem', reforma: 'Reforma geral', seguranca: 'Segurança eletrônica', limpeza_e_jardinagem: 'Limpeza e jardinagem', outro: 'Serviço' }
 const PERIODOS = { manha: 'manhã', tarde: 'tarde', integral: 'dia todo' }
 const RECENTE_MS = 10 * 60 * 1000 // só avisa eventos dos últimos 10 minutos
 
