@@ -251,3 +251,38 @@ on conflict (id) do nothing;
 drop policy if exists "fotos_upload" on storage.objects;
 create policy "fotos_upload" on storage.objects for insert to anon, authenticated
   with check (bucket_id = 'fotos');
+
+-- ---------------------------------------------------------------------
+-- DADOS DA EMPRESA (uma linha só, editada pelo admin)
+-- ---------------------------------------------------------------------
+create table if not exists public.empresa (
+  id            int primary key default 1 check (id = 1),
+  nome          text not null default 'Grupo RD',
+  whatsapp      text,
+  email         text,
+  endereco      text,
+  cidade        text,
+  cnpj          text,
+  atualizado_em timestamptz not null default now()
+);
+insert into public.empresa (id) values (1) on conflict (id) do nothing;
+
+alter table public.empresa enable row level security;
+
+drop policy if exists empresa_le on public.empresa;
+create policy empresa_le on public.empresa for select to authenticated using (true);
+
+drop policy if exists empresa_admin on public.empresa;
+create policy empresa_admin on public.empresa for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+grant select, insert, update on public.empresa to authenticated;
+
+-- Dados públicos da empresa (tela do cliente: WhatsApp e rodapé)
+create or replace function public.contato_empresa()
+returns table (nome text, whatsapp text, cidade text, cnpj text)
+language sql stable security definer set search_path = public as $$
+  select nome, whatsapp, cidade, cnpj from empresa where id = 1;
+$$;
+revoke all on function public.contato_empresa() from public;
+grant execute on function public.contato_empresa() to anon, authenticated;

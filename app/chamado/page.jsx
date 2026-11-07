@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Loader2, Sparkles, Trees, Hammer, Layers, HelpCircle } from 'lucide-react'
+import { CheckCircle2, MessageCircle, Loader2, Sparkles, Trees, Hammer, Layers, HelpCircle } from 'lucide-react'
 import CabecalhoPublico from '@/components/CabecalhoPublico'
 import { SeletorArquivos } from '@/components/Arquivos'
 import { supabase } from '@/lib/supabase'
 import { enviarArquivos } from '@/lib/upload'
-import { mascaraTelefone, hojeISO, PERIODOS } from '@/lib/constantes'
+import { mascaraTelefone, hojeISO, PERIODOS, SERVICOS, formatarData, linkWhatsApp } from '@/lib/constantes'
+import { useEmpresa } from '@/lib/useEmpresa'
 
 const OPCOES = [
   { valor: 'limpeza', nome: 'Limpeza', icone: Sparkles },
@@ -23,6 +24,7 @@ export default function AbrirChamado() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
   const [protocolo, setProtocolo] = useState(null)
+  const empresa = useEmpresa()
 
   const alterar = (campo) => (e) =>
     setForm({ ...form, [campo]: campo === 'telefone' ? mascaraTelefone(e.target.value) : e.target.value })
@@ -70,7 +72,17 @@ export default function AbrirChamado() {
               <div className="mt-1 text-3xl font-semibold tracking-wider text-marca-900">{protocolo}</div>
             </div>
             <div className="mt-6 flex flex-col gap-2">
-              <Link href={`/acompanhar?protocolo=${protocolo}`} className="btn-primario">Acompanhar pedido</Link>
+              {empresa?.whatsapp && (
+                <a target="_blank" rel="noreferrer" className="btn-primario"
+                  href={linkWhatsApp(empresa.whatsapp,
+                    `Olá! Acabei de abrir o pedido #${protocolo} pelo site.\n` +
+                    `Serviço: ${SERVICOS[form.servico]}\nNome: ${form.nome}\nEndereço: ${form.endereco}` +
+                    (form.data_desejada ? `\nData desejada: ${formatarData(form.data_desejada)} (${PERIODOS[form.periodo]})` : '') +
+                    `\n\n${form.descricao}`)}>
+                  <MessageCircle size={17} /> Avisar pelo WhatsApp
+                </a>
+              )}
+              <Link href={`/acompanhar?protocolo=${protocolo}`} className={empresa?.whatsapp ? 'btn-secundario' : 'btn-primario'}>Acompanhar pedido</Link>
               <Link href="/" className="btn-secundario">Voltar ao início</Link>
             </div>
           </div>

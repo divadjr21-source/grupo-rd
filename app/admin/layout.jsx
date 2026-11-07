@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, Building2, Users, LogOut } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Building2, Users, Building, LogOut } from 'lucide-react'
 import Logo from '@/components/Logo'
 import Carregando from '@/components/Carregando'
 import { useSessao, sair } from '@/lib/useSessao'
@@ -11,7 +11,8 @@ const MENU = [
   { href: '/admin', nome: 'Início', icone: LayoutDashboard },
   { href: '/admin/chamados', nome: 'Chamados', icone: ClipboardList },
   { href: '/admin/clientes', nome: 'Clientes', icone: Building2 },
-  { href: '/admin/funcionarios', nome: 'Equipe', icone: Users },
+  { href: '/admin/usuarios', nome: 'Usuários', icone: Users },
+  { href: '/admin/empresa', nome: 'Empresa', icone: Building },
 ]
 
 export default function LayoutAdmin({ children }) {

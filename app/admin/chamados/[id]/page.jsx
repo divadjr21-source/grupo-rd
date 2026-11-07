@@ -186,7 +186,7 @@ export default function DetalheChamado() {
             <span className="label flex items-center gap-1.5"><Users size={15} /> Equipe</span>
             {funcionariosVisiveis.length === 0 ? (
               <p className="text-sm text-slate-400">
-                Nenhum funcionário cadastrado. <Link href="/admin/funcionarios" className="text-marca-700 underline">Cadastrar</Link>
+                Nenhum funcionário cadastrado. <Link href="/admin/usuarios" className="text-marca-700 underline">Cadastrar</Link>
               </p>
             ) : (
               <div className="space-y-1.5">

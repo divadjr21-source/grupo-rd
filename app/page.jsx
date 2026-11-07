@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { Sparkles, Trees, Hammer, ClipboardList, Send, ShieldCheck, BadgeCheck, Clock, Users } from 'lucide-react'
+import { Sparkles, Trees, Hammer, ClipboardList, Send, BadgeCheck, Clock, Users } from 'lucide-react'
 import CabecalhoPublico from '@/components/CabecalhoPublico'
+import RodapeEmpresa from '@/components/RodapeEmpresa'
 import { IMAGENS } from '@/lib/imagens'
 
 const SERVICOS = [
@@ -85,10 +86,7 @@ export default function Inicio() {
         </div>
       </main>
 
-      <footer className="border-t border-slate-100 py-6 text-center text-xs text-slate-400">
-        <span className="inline-flex items-center gap-1"><ShieldCheck size={13} /> Seus dados são usados apenas para o atendimento.</span>
-        <div className="mt-1">© {new Date().getFullYear()} Grupo RD</div>
-      </footer>
+      <RodapeEmpresa />
     </div>
   )
 }

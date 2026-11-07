@@ -1,6 +1,6 @@
 # Grupo RD — Limpeza & Jardinagem
 
-Sistema de chamados para serviços de limpeza e jardinagem em condomínios e empresas.
+Sistema de chamados para serviços de limpeza e jardinagem em casas, condomínios e empresas.
 
 - **Tela pública** (sem login): solicitar serviço com fotos/vídeos e acompanhar pelo protocolo.
 - **Painel do Admin** (`/admin`): chamados, clientes, equipe e atribuição de funcionários.
