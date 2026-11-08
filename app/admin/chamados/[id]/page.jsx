@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Phone, MapPin, MessageCircle, Loader2, Check, Users, AlertTriangle, Send } from 'lucide-react'
+import { ArrowLeft, Phone, MapPin, MessageCircle, Loader2, Check, Users, AlertTriangle, Send, Trash2 } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import StatusBadge from '@/components/StatusBadge'
 import { Galeria } from '@/components/Arquivos'
@@ -25,6 +25,8 @@ async function avisarEquipe(chamadoId, funcionarios) {
 
 export default function DetalheChamado() {
   const { id } = useParams()
+  const router = useRouter()
+  const [excluindo, setExcluindo] = useState(false)
   const abrirOrcamento = useSearchParams().get('orcamento') === 'novo'
   const [chamado, setChamado] = useState(null)
   const [naoEncontrado, setNaoEncontrado] = useState(false)
@@ -91,6 +93,18 @@ export default function DetalheChamado() {
 
   function alternarMembro(fid) {
     setEquipe((atual) => (atual.includes(fid) ? atual.filter((x) => x !== fid) : [...atual, fid]))
+  }
+
+  async function excluir() {
+    const extra = orcamento ? '\n\nO orçamento deste chamado também será apagado.' : ''
+    if (!confirm(`Excluir o chamado #${chamado.protocolo} de ${chamado.nome_solicitante}?${extra}\n\nEssa ação não pode ser desfeita.`)) return
+    setExcluindo(true)
+    const { error } = await supabase.from('chamados').delete().eq('id', id)
+    if (error) {
+      setExcluindo(false)
+      return alert('Não foi possível excluir: ' + error.message)
+    }
+    router.replace('/admin/chamados')
   }
 
   async function salvar() {
@@ -317,6 +331,10 @@ export default function DetalheChamado() {
             {salvando ? <Loader2 size={17} className="animate-spin" /> : mensagem === 'ok' ? <Check size={17} /> : null}
             {mensagem === 'ok' ? 'Salvo' : 'Salvar alterações'}
           </button>
+          <button onClick={excluir} disabled={excluindo || salvando} className="btn-perigo w-full">
+            {excluindo ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} Excluir chamado
+          </button>
+          <p className="text-center text-xs text-slate-400">Para manter o histórico, prefira mudar o status para "Cancelado".</p>
         </section>
       </div>
     </div>
