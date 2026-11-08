@@ -36,7 +36,7 @@
   }
   .bg-foto-capa {
     background-image: linear-gradient(rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.62)),
-      url('https://images.unsplash.com/photo-1745665777586-09381ba528d6?auto=format&fit=crop&w=2000&q=70');
+      url('https://images.unsplash.com/photo-1542350880924-09225f70e026?auto=format&fit=crop&w=2000&q=70');
   }
   .bg-foto-limpeza {
     background-image: linear-gradient(rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.62)),
