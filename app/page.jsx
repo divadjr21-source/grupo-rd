@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Sparkles, Trees, Hammer, Cctv, ClipboardList, Send, BadgeCheck, Clock, Users } from 'lucide-react'
 import CabecalhoPublico from '@/components/CabecalhoPublico'
 import RodapeEmpresa from '@/components/RodapeEmpresa'
-import { IMAGENS } from '@/lib/imagens'
+import { IMAGENS, EQUIPE } from '@/lib/imagens'
 
 const SERVICOS = [
   {
@@ -38,12 +38,13 @@ export default function Inicio() {
 
       {/* Capa com foto */}
       <section className="relative isolate overflow-hidden bg-slate-900">
-        <img src={IMAGENS.capa} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_60%]" />
+        <img src={IMAGENS.capa} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover object-center" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950/90 via-slate-900/60 to-slate-900/15" />
         <div className="absolute inset-0 -z-10 bg-slate-950/35 sm:bg-transparent" />
-        <div className="mx-auto max-w-5xl px-4 py-20 sm:py-28">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:py-24 lg:grid-cols-[1fr_400px]">
+          <div>
           <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white ring-1 ring-inset ring-white/25 backdrop-blur">
-            Residências, condomínios e empresas
+            Litoral Norte da Bahia · Residências, condomínios e empresas
           </span>
           <h1 className="mt-5 max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             Serviços para sua casa, condomínio ou empresa com padrão profissional.
@@ -58,6 +59,29 @@ export default function Inicio() {
             <Link href="/acompanhar" className="btn flex-1 border border-white/40 bg-white/10 py-3 text-base text-white backdrop-blur hover:bg-white/20">
               <ClipboardList size={18} /> Acompanhar pedido
             </Link>
+          </div>
+
+          {/* Equipe no celular: fileira de fotos */}
+          <div className="mt-8 flex gap-3 lg:hidden">
+            {EQUIPE.map((p) => (
+              <div key={p.nome} className="flex w-16 flex-col items-center gap-1.5">
+                <img src={p.foto} alt={`Profissional de ${p.nome.toLowerCase()}`} className="h-14 w-14 rounded-full object-cover ring-2 ring-white/80 shadow-lg" />
+                <span className="text-[11px] font-medium text-white/90">{p.nome}</span>
+              </div>
+            ))}
+          </div>
+          </div>
+
+          {/* Equipe no computador: mosaico */}
+          <div className="hidden grid-cols-2 gap-3 lg:grid">
+            {EQUIPE.map((p, i) => (
+              <figure key={p.nome} className={`relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/30 ${i % 2 ? 'translate-y-6' : ''}`}>
+                <img src={p.foto} alt={`Profissional de ${p.nome.toLowerCase()}`} className="h-44 w-full object-cover" />
+                <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent px-3 pb-2 pt-6 text-sm font-medium text-white">
+                  {p.nome}
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
