@@ -40,6 +40,7 @@ export default function Inicio() {
       <section className="relative isolate overflow-hidden bg-slate-900">
         <img src={IMAGENS.capa} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_60%]" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950/90 via-slate-900/60 to-slate-900/15" />
+        <div className="absolute inset-0 -z-10 bg-slate-950/35 sm:bg-transparent" />
         <div className="mx-auto max-w-5xl px-4 py-20 sm:py-28">
           <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white ring-1 ring-inset ring-white/25 backdrop-blur">
             Residências, condomínios e empresas
