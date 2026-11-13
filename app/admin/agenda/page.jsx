@@ -36,7 +36,7 @@ export default function Agenda() {
     setServicos(null)
     supabase
       .from('chamados')
-      .select('id, protocolo, nome_solicitante, endereco, servico, status, data_agendada, periodo_agendado, clientes(nome), chamado_equipe(funcionario_id, perfis(nome))')
+      .select('id, protocolo, nome_solicitante, endereco, servico, status, data_agendada, periodo_agendado, contrato_id, clientes(nome), chamado_equipe(funcionario_id, perfis(nome))')
       .gte('data_agendada', inicio)
       .lte('data_agendada', fim)
       .neq('status', 'cancelado')
@@ -140,7 +140,10 @@ export default function Agenda() {
                             <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
                               {s.periodo_agendado ? PERIODOS_AGENDA[s.periodo_agendado] : 'Sem período'}
                             </span>
-                            <StatusBadge status={s.status} />
+                            <div className="flex items-center gap-1">
+                              {s.contrato_id && <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-700">Contrato</span>}
+                              <StatusBadge status={s.status} />
+                            </div>
                           </div>
                           <div className="mt-2 truncate font-medium text-slate-900">{s.clientes?.nome || s.nome_solicitante}</div>
                           <div className="text-xs text-slate-500">#{s.protocolo} · {SERVICOS[s.servico]}</div>

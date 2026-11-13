@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, CalendarDays, FileText, Building2, Users, Building, LogOut } from 'lucide-react'
+import { useEffect } from 'react'
+import { LayoutDashboard, ClipboardList, CalendarDays, FileText, Repeat, Wallet, Building2, Users, Building, LogOut } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import { BotaoNotificacoes } from '@/components/Notificacoes'
 import Logo from '@/components/Logo'
 import Carregando from '@/components/Carregando'
@@ -13,6 +15,8 @@ const MENU = [
   { href: '/admin/chamados', nome: 'Chamados', icone: ClipboardList },
   { href: '/admin/agenda', nome: 'Agenda', icone: CalendarDays },
   { href: '/admin/orcamentos', nome: 'Orçamentos', icone: FileText },
+  { href: '/admin/contratos', nome: 'Contratos', icone: Repeat },
+  { href: '/admin/financeiro', nome: 'Financeiro', icone: Wallet },
   { href: '/admin/clientes', nome: 'Clientes', icone: Building2 },
   { href: '/admin/usuarios', nome: 'Usuários', icone: Users },
   { href: '/admin/empresa', nome: 'Empresa', icone: Building },
@@ -22,6 +26,17 @@ export default function LayoutAdmin({ children }) {
   const perfil = useSessao('admin')
   const caminho = usePathname()
 
+  // Uma vez por dia: coloca na agenda os serviços dos contratos e cria as cobranças do mês
+  useEffect(() => {
+    if (!perfil) return
+    const hoje = new Date().toISOString().slice(0, 10)
+    let ultimo = null
+    try { ultimo = localStorage.getItem('grd-geracao') } catch {}
+    if (ultimo === hoje) return
+    Promise.all([supabase.rpc('gerar_servicos_contratos', { p_dias: 30 }), supabase.rpc('gerar_cobrancas')])
+      .then(([a, b]) => { if (!a.error && !b.error) { try { localStorage.setItem('grd-geracao', hoje) } catch {} } })
+  }, [perfil])
+
   if (!perfil) return <Carregando />
 
   const ativo = (href) => (href === '/admin' ? caminho === '/admin' : caminho.startsWith(href))
@@ -29,7 +44,7 @@ export default function LayoutAdmin({ children }) {
   return (
     <div className="min-h-screen md:flex">
       {/* Menu lateral (computador) */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white md:flex print:!hidden">
         <div className="border-b border-slate-100 p-4"><Logo subtitulo="Painel Admin" /></div>
         <nav className="flex-1 space-y-1 p-3">
           {MENU.map(({ href, nome, icone: Icone }) => (
@@ -50,7 +65,7 @@ export default function LayoutAdmin({ children }) {
       </aside>
 
       {/* Topo (celular) */}
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white md:hidden">
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white md:hidden print:!hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <Logo subtitulo="Painel Admin" />
           <div className="flex items-center gap-1">
@@ -69,7 +84,7 @@ export default function LayoutAdmin({ children }) {
         </nav>
       </header>
 
-      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8 print:p-0">
         <div className="mx-auto max-w-5xl">{children}</div>
       </main>
     </div>

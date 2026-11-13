@@ -417,3 +417,176 @@ drop policy if exists push_proprias on public.push_inscricoes;
 create policy push_proprias on public.push_inscricoes for all to authenticated
   using (perfil_id = auth.uid()) with check (perfil_id = auth.uid());
 grant select, insert, update, delete on public.push_inscricoes to authenticated;
+
+-- =====================================================================
+-- CONTRATOS RECORRENTES E FINANCEIRO
+-- =====================================================================
+
+-- Chave Pix da empresa (aparece na cobrança e no recibo)
+alter table public.empresa add column if not exists chave_pix text;
+
+-- CONTRATOS (serviço fixo: ex. limpeza 3x por semana)
+create table if not exists public.contratos (
+  id               uuid primary key default gen_random_uuid(),
+  cliente_id       uuid not null references public.clientes on delete restrict,
+  titulo           text not null,
+  servico          text not null check (servico in ('limpeza', 'jardinagem', 'limpeza_e_jardinagem', 'reforma', 'seguranca', 'outro')),
+  descricao        text,
+  endereco         text,
+  frequencia       text not null default 'semanal' check (frequencia in ('semanal', 'quinzenal', 'mensal')),
+  dias_semana      int[] not null default '{}',          -- 0 = domingo ... 6 = sábado
+  dia_mes          int check (dia_mes between 1 and 28), -- para frequência mensal
+  periodo_agendado text check (periodo_agendado is null or periodo_agendado in ('manha', 'tarde', 'integral')),
+  equipe           uuid[] not null default '{}',
+  valor_mensal     numeric(12,2) not null default 0 check (valor_mensal >= 0),
+  dia_vencimento   int not null default 10 check (dia_vencimento between 1 and 28),
+  inicio           date not null default current_date,
+  fim              date,
+  ativo            boolean not null default true,
+  observacoes      text,
+  criado_em        timestamptz not null default now(),
+  atualizado_em    timestamptz not null default now()
+);
+
+drop trigger if exists contratos_atualizado on public.contratos;
+create trigger contratos_atualizado before update on public.contratos
+  for each row execute function public.tocar_atualizado_em();
+
+alter table public.contratos enable row level security;
+drop policy if exists contratos_admin on public.contratos;
+create policy contratos_admin on public.contratos for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+grant select, insert, update, delete on public.contratos to authenticated;
+
+-- Serviços gerados pelo contrato
+alter table public.chamados add column if not exists contrato_id uuid references public.contratos on delete set null;
+create unique index if not exists chamados_contrato_data on public.chamados (contrato_id, data_agendada) where contrato_id is not null;
+
+-- COBRANÇAS (serviços avulsos e mensalidades de contrato)
+create table if not exists public.cobrancas (
+  id              uuid primary key default gen_random_uuid(),
+  chamado_id      uuid unique references public.chamados on delete set null,
+  contrato_id     uuid references public.contratos on delete set null,
+  competencia     date,
+  cliente_nome    text not null,
+  telefone        text,
+  descricao       text not null,
+  valor           numeric(12,2) not null check (valor >= 0),
+  vencimento      date not null,
+  status          text not null default 'pendente' check (status in ('pendente', 'pago', 'cancelado')),
+  pago_em         date,
+  forma_pagamento text,
+  observacoes     text,
+  criado_em       timestamptz not null default now(),
+  atualizado_em   timestamptz not null default now()
+);
+create unique index if not exists cobrancas_contrato_mes on public.cobrancas (contrato_id, competencia) where contrato_id is not null;
+create index if not exists cobrancas_status_idx on public.cobrancas (status, vencimento);
+
+drop trigger if exists cobrancas_atualizado on public.cobrancas;
+create trigger cobrancas_atualizado before update on public.cobrancas
+  for each row execute function public.tocar_atualizado_em();
+
+alter table public.cobrancas enable row level security;
+drop policy if exists cobrancas_admin on public.cobrancas;
+create policy cobrancas_admin on public.cobrancas for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+grant select, insert, update, delete on public.cobrancas to authenticated;
+
+create or replace function public.nome_servico(p text) returns text language sql immutable as $$
+  select case p when 'limpeza' then 'Limpeza' when 'jardinagem' then 'Jardinagem'
+    when 'limpeza_e_jardinagem' then 'Limpeza e jardinagem' when 'reforma' then 'Reforma geral'
+    when 'seguranca' then 'Segurança eletrônica' else 'Serviço' end;
+$$;
+
+-- Coloca na agenda os serviços dos contratos ativos (próximos N dias)
+create or replace function public.gerar_servicos_contratos(p_dias int default 30) returns int
+language plpgsql security definer set search_path = public as $$
+declare
+  k record; d date; v_id uuid; v_total int := 0;
+  v_hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+  v_ok boolean;
+begin
+  if not public.is_admin() then raise exception 'Acesso negado.'; end if;
+  for k in
+    select ct.*, cl.nome as cli_nome, cl.telefone as cli_tel, cl.endereco as cli_end
+    from contratos ct join clientes cl on cl.id = ct.cliente_id
+    where ct.ativo
+  loop
+    for d in select generate_series(greatest(k.inicio, v_hoje),
+                                    least(coalesce(k.fim, v_hoje + p_dias), v_hoje + p_dias), interval '1 day')::date
+    loop
+      v_ok := case k.frequencia
+        when 'semanal' then extract(dow from d)::int = any(k.dias_semana)
+        when 'quinzenal' then extract(dow from d)::int = any(k.dias_semana)
+             and (((d - date_trunc('week', k.inicio)::date) / 7) % 2) = 0
+        when 'mensal' then extract(day from d)::int = k.dia_mes
+        else false end;
+      continue when not v_ok;
+
+      v_id := null;
+      insert into chamados (cliente_id, contrato_id, nome_solicitante, telefone, endereco, servico, descricao,
+                            status, data_agendada, periodo_agendado, avisado_em)
+      values (k.cliente_id, k.id, k.cli_nome, coalesce(k.cli_tel, ''), coalesce(nullif(k.endereco, ''), k.cli_end, ''),
+              k.servico, 'Contrato: ' || k.titulo || coalesce(E'\n' || nullif(k.descricao, ''), ''),
+              'agendado', d, k.periodo_agendado, now())
+      on conflict (contrato_id, data_agendada) where contrato_id is not null do nothing
+      returning id into v_id;
+
+      if v_id is not null then
+        v_total := v_total + 1;
+        insert into chamado_equipe (chamado_id, funcionario_id)
+        select v_id, p.id from perfis p where p.id = any(k.equipe) and p.ativo
+        on conflict do nothing;
+      end if;
+    end loop;
+  end loop;
+  return v_total;
+end $$;
+
+-- Cria as cobranças: serviços concluídos com orçamento aprovado + mensalidades dos contratos
+create or replace function public.gerar_cobrancas() returns int
+language plpgsql security definer set search_path = public as $$
+declare
+  v_total int := 0; n int; k record; m date;
+  v_hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+begin
+  if not public.is_admin() then raise exception 'Acesso negado.'; end if;
+
+  insert into cobrancas (chamado_id, cliente_nome, telefone, descricao, valor, vencimento)
+  select c.id, coalesce(cl.nome, c.nome_solicitante), c.telefone,
+         'Pedido #' || c.protocolo || ' — ' || public.nome_servico(c.servico),
+         public.total_orcamento(o.itens, o.desconto),
+         coalesce((c.concluido_em at time zone 'America/Sao_Paulo')::date, v_hoje)
+  from chamados c
+  join orcamentos o on o.chamado_id = c.id and o.status = 'aprovado'
+  left join clientes cl on cl.id = c.cliente_id
+  where c.status = 'concluido' and c.contrato_id is null
+    and not exists (select 1 from cobrancas b where b.chamado_id = c.id);
+  get diagnostics n = row_count; v_total := v_total + n;
+
+  for k in
+    select ct.*, cl.nome as cli_nome, cl.telefone as cli_tel
+    from contratos ct join clientes cl on cl.id = ct.cliente_id
+    where ct.ativo and ct.valor_mensal > 0
+  loop
+    for m in select generate_series(
+               greatest(date_trunc('month', k.inicio), date_trunc('month', k.criado_em at time zone 'America/Sao_Paulo')),
+               least(date_trunc('month', v_hoje), date_trunc('month', coalesce(k.fim, v_hoje))),
+               interval '1 month')::date
+    loop
+      insert into cobrancas (contrato_id, competencia, cliente_nome, telefone, descricao, valor, vencimento)
+      values (k.id, m, k.cli_nome, k.cli_tel,
+              'Contrato: ' || k.titulo || ' — ' || to_char(m, 'MM/YYYY'),
+              k.valor_mensal, (m + (k.dia_vencimento - 1))::date)
+      on conflict (contrato_id, competencia) where contrato_id is not null do nothing;
+      get diagnostics n = row_count; v_total := v_total + n;
+    end loop;
+  end loop;
+  return v_total;
+end $$;
+
+revoke all on function public.gerar_servicos_contratos(int) from public;
+revoke all on function public.gerar_cobrancas() from public;
+grant execute on function public.gerar_servicos_contratos(int) to authenticated;
+grant execute on function public.gerar_cobrancas() to authenticated;

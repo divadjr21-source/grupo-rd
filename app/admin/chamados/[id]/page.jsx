@@ -169,6 +169,7 @@ export default function DetalheChamado() {
       </div>
       <p className="text-sm text-slate-500">
         {SERVICOS[chamado.servico]} · aberto em {formatarData(chamado.criado_em, true)}
+        {chamado.contrato_id && <> · <Link href="/admin/contratos" className="font-medium text-violet-700 underline">serviço de contrato</Link></>}
       </p>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_340px]">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Inbox, CalendarDays, Hammer, CheckCircle2, Plus, FileCheck2, ChevronRight } from 'lucide-react'
+import { Inbox, CalendarDays, Hammer, CheckCircle2, Plus, FileCheck2, ChevronRight, Wallet } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import ListaChamados from '@/components/ListaChamados'
 import { supabase } from '@/lib/supabase'
@@ -17,6 +17,7 @@ function hojeISO() {
 export default function Dashboard() {
   const [chamados, setChamados] = useState(null)
   const [aprovados, setAprovados] = useState([])
+  const [atraso, setAtraso] = useState(null)
 
   useEffect(() => {
     supabase
@@ -25,6 +26,8 @@ export default function Dashboard() {
       .order('criado_em', { ascending: false })
       .limit(500)
       .then(({ data }) => setChamados(data || []))
+    supabase.from('cobrancas').select('valor').eq('status', 'pendente').lt('vencimento', hojeISO())
+      .then(({ data }) => data && data.length && setAtraso({ n: data.length, total: data.reduce((t, c) => t + Number(c.valor), 0) }))
     // Orçamentos aprovados que ainda precisam de data/equipe
     supabase
       .from('orcamentos')
@@ -70,6 +73,14 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {atraso && (
+        <Link href="/admin/financeiro" className="mt-6 flex items-center gap-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800 ring-1 ring-red-200 hover:bg-red-100">
+          <Wallet size={18} className="shrink-0" />
+          <span className="flex-1"><strong>{atraso.n} cobrança(s) em atraso</strong> — {formatarMoeda(atraso.total)}</span>
+          <ChevronRight size={18} />
+        </Link>
+      )}
 
       {aprovados.length > 0 && (
         <section className="mt-8">

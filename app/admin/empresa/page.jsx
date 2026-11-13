@@ -22,7 +22,7 @@ export default function Empresa() {
   useEffect(() => {
     supabase.from('empresa').select('*').eq('id', 1).maybeSingle().then(({ data, error }) => {
       if (error) setStatus('erro:' + 'A tabela da empresa ainda não foi criada no banco. Rode o comando SQL da atualização.')
-      setForm({ nome: '', whatsapp: '', email: '', endereco: '', cidade: '', cnpj: '', ...(data || {}) })
+      setForm({ nome: '', whatsapp: '', email: '', endereco: '', cidade: '', cnpj: '', chave_pix: '', ...(data || {}) })
     })
   }, [])
 
@@ -69,6 +69,12 @@ export default function Empresa() {
           <p className="mt-1.5 text-xs text-slate-400">
             Informe com DDI e DDD, exemplo: 5571999999999. Depois de abrir um pedido, o cliente vê um botão para avisar a empresa por esse WhatsApp.
           </p>
+        </div>
+
+        <div>
+          <label className="label">Chave Pix</label>
+          <input className="input" value={form.chave_pix || ''} onChange={alterar('chave_pix')} placeholder="CNPJ, e-mail, telefone ou chave aleatória" />
+          <p className="mt-1.5 text-xs text-slate-400">Vai junto na mensagem de cobrança pelo WhatsApp e aparece no recibo.</p>
         </div>
 
         <div>
