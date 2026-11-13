@@ -1,6 +1,6 @@
 // Service worker: permite instalar o app, mostra um aviso sem internet e recebe as notificações.
 // Não guarda dados dos chamados em cache — tudo continua vindo do servidor.
-const CACHE = 'grupo-rd-v2'
+const CACHE = 'grupo-rd-v3'
 const OFFLINE = '/offline.html'
 
 self.addEventListener('install', (event) => {
