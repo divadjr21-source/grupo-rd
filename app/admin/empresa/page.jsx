@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Building, Save, Loader2, Check } from 'lucide-react'
+import { Building, Save, Loader2, Check, Download, DatabaseBackup } from 'lucide-react'
+import { baixarBackup } from '@/lib/backup'
 import Carregando from '@/components/Carregando'
 import { supabase } from '@/lib/supabase'
 
@@ -18,6 +19,21 @@ export default function Empresa() {
   const [form, setForm] = useState(null)
   const [salvando, setSalvando] = useState(false)
   const [status, setStatus] = useState('')
+  const [backup, setBackup] = useState('') // texto de progresso / resultado
+  const [gerando, setGerando] = useState(false)
+
+  async function fazerBackup() {
+    setGerando(true)
+    setBackup('Preparando…')
+    try {
+      const r = await baixarBackup(setBackup)
+      setBackup(`Pronto! Baixado com ${r.clientes} clientes, ${r.chamados} chamados, ${r.orcamentos} orçamentos, ${r.contratos} contratos e ${r.cobrancas} cobranças.`)
+    } catch (e) {
+      setBackup('erro:Não foi possível gerar o backup: ' + e.message)
+    } finally {
+      setGerando(false)
+    }
+  }
 
   useEffect(() => {
     supabase.from('empresa').select('*').eq('id', 1).maybeSingle().then(({ data, error }) => {
@@ -107,6 +123,20 @@ export default function Empresa() {
           {status === 'ok' ? 'Salvo!' : 'Salvar configurações'}
         </button>
       </form>
+
+      <section className="card mt-6 p-5 sm:p-6">
+        <h2 className="flex items-center gap-2 font-semibold text-slate-900"><DatabaseBackup size={18} className="text-marca-600" /> Backup dos dados</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Baixa uma planilha do Excel com abas de clientes, chamados, orçamentos, contratos, financeiro e usuários.
+          Faça uma vez por mês e guarde no seu computador ou no Google Drive.
+        </p>
+        <button onClick={fazerBackup} disabled={gerando} className="btn-primario mt-4">
+          {gerando ? <Loader2 size={17} className="animate-spin" /> : <Download size={17} />} Baixar backup (Excel)
+        </button>
+        {backup && (
+          <p className={`mt-3 text-sm ${backup.startsWith('erro:') ? 'text-red-700' : 'text-slate-600'}`}>{backup.replace(/^erro:/, '')}</p>
+        )}
+      </section>
     </div>
   )
 }

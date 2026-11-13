@@ -237,8 +237,10 @@ export default function DetalheChamado() {
                 {chamado.checkout_em && <span>Saída: <strong>{new Date(chamado.checkout_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</strong></span>}
                 {chamado.checklist?.length > 0 && <span>Checklist: <strong>{chamado.checklist.filter((i) => i.feito).length}/{chamado.checklist.length}</strong></span>}
                 {chamado.status === 'concluido' && <span>Assinatura: <strong>{chamado.assinatura_nome || 'sem assinatura'}</strong></span>}
+                {chamado.avaliacao_nota && <span>Avaliação do cliente: <strong className="text-amber-600">{'★'.repeat(chamado.avaliacao_nota)}{'☆'.repeat(5 - chamado.avaliacao_nota)}</strong></span>}
               </div>
               {chamado.relatorio_equipe && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600">{chamado.relatorio_equipe}</p>}
+              {chamado.avaliacao_comentario && <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">Cliente: "{chamado.avaliacao_comentario}"</p>}
               {chamado.fotos_antes?.length > 0 && (<>
                 <h4 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Antes</h4>
                 <div className="mt-2"><Galeria links={chamado.fotos_antes} /></div>

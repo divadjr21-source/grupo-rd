@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
-import { LayoutDashboard, ClipboardList, CalendarDays, FileText, Repeat, Wallet, Building2, Users, Building, LogOut } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, CalendarDays, FileText, Repeat, Wallet, Star, Building2, Users, Building, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { BotaoNotificacoes } from '@/components/Notificacoes'
 import Logo from '@/components/Logo'
@@ -17,6 +17,7 @@ const MENU = [
   { href: '/admin/orcamentos', nome: 'Orçamentos', icone: FileText },
   { href: '/admin/contratos', nome: 'Contratos', icone: Repeat },
   { href: '/admin/financeiro', nome: 'Financeiro', icone: Wallet },
+  { href: '/admin/avaliacoes', nome: 'Avaliações', icone: Star },
   { href: '/admin/clientes', nome: 'Clientes', icone: Building2 },
   { href: '/admin/usuarios', nome: 'Usuários', icone: Users },
   { href: '/admin/empresa', nome: 'Empresa', icone: Building },

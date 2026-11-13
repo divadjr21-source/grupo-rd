@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle2, XCircle, Loader2, Printer, MessageCircle, Leaf, Clock } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Printer, MessageCircle, Clock } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import { supabase } from '@/lib/supabase'
 import { SERVICOS, formatarData, formatarMoeda, linkWhatsApp, hojeISO } from '@/lib/constantes'
@@ -56,7 +56,7 @@ export default function OrcamentoPublico() {
         {/* Cabeçalho da empresa */}
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 bg-marca-600 px-6 py-5 text-white print:bg-white print:text-slate-900">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 print:bg-marca-600 print:text-white"><Leaf size={22} /></div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 print:bg-marca-600 print:text-white"><span className="text-[15px] font-extrabold tracking-tight">RD</span></div>
             <div>
               <div className="text-lg font-semibold">{emp.nome || 'Grupo RD'}</div>
               <div className="text-xs opacity-80">

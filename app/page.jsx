@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Sparkles, Trees, Hammer, Cctv, ClipboardList, Send, BadgeCheck, Clock, Users } from 'lucide-react'
 import CabecalhoPublico from '@/components/CabecalhoPublico'
 import RodapeEmpresa from '@/components/RodapeEmpresa'
+import Depoimentos from '@/components/Depoimentos'
 import { IMAGENS, EQUIPE } from '@/lib/imagens'
 
 const SERVICOS = [
@@ -116,6 +117,8 @@ export default function Inicio() {
           ))}
         </div>
       </main>
+
+      <Depoimentos />
 
       <RodapeEmpresa />
     </div>

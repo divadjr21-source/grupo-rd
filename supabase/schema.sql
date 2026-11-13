@@ -691,3 +691,67 @@ grant execute on function public.registrar_chegada(uuid, double precision, doubl
 grant execute on function public.salvar_relatorio(uuid, jsonb, text, text[], text[]) to authenticated;
 grant execute on function public.concluir_servico(uuid, jsonb, text, text[], text, text, double precision, double precision, double precision) to authenticated;
 grant execute on function public.ver_relatorio(text) to anon, authenticated;
+
+-- =====================================================================
+-- AVALIAÇÃO DO CLIENTE
+-- =====================================================================
+alter table public.chamados add column if not exists avaliacao_nota       int check (avaliacao_nota between 1 and 5);
+alter table public.chamados add column if not exists avaliacao_comentario text;
+alter table public.chamados add column if not exists avaliacao_em         timestamptz;
+alter table public.chamados add column if not exists avaliacao_autoriza   boolean not null default false; -- cliente deixa mostrar no site
+alter table public.chamados add column if not exists avaliacao_destaque   boolean not null default false; -- admin escolheu mostrar
+alter table public.chamados add column if not exists avaliacao_avisada_em timestamptz;
+
+-- Cliente avalia pelo link do relatório (uma vez só)
+create or replace function public.avaliar_servico(p_token text, p_nota int, p_comentario text default null, p_autoriza boolean default false)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_nota is null or p_nota < 1 or p_nota > 5 then raise exception 'Escolha de 1 a 5 estrelas.'; end if;
+  if length(coalesce(p_comentario, '')) > 1000 then raise exception 'Comentário muito longo.'; end if;
+  update chamados set
+    avaliacao_nota = p_nota,
+    avaliacao_comentario = nullif(trim(coalesce(p_comentario, '')), ''),
+    avaliacao_autoriza = coalesce(p_autoriza, false),
+    avaliacao_em = now()
+  where relatorio_token = p_token and status = 'concluido' and avaliacao_nota is null;
+  if not found then raise exception 'Este serviço já foi avaliado ou não está disponível.'; end if;
+end $$;
+
+-- Relatório público agora informa se já foi avaliado
+create or replace function public.ver_relatorio(p_token text) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'protocolo', c.protocolo, 'servico', c.servico, 'descricao', c.descricao,
+    'cliente', coalesce(cl.nome, c.nome_solicitante), 'endereco', c.endereco,
+    'data_agendada', c.data_agendada, 'checkin_em', c.checkin_em, 'checkout_em', c.checkout_em,
+    'checkin_local', c.checkin_local, 'checkout_local', c.checkout_local,
+    'checklist', c.checklist, 'relatorio', c.relatorio_equipe,
+    'fotos_antes', c.fotos_antes, 'fotos_depois', c.fotos_conclusao,
+    'assinatura_url', c.assinatura_url, 'assinatura_nome', c.assinatura_nome,
+    'avaliacao_nota', c.avaliacao_nota, 'avaliacao_comentario', c.avaliacao_comentario,
+    'equipe', (select coalesce(jsonb_agg(p.nome order by p.nome), '[]') from chamado_equipe e join perfis p on p.id = e.funcionario_id where e.chamado_id = c.id),
+    'empresa', (select to_jsonb(e) - 'id' - 'atualizado_em' - 'chave_pix' from empresa e where e.id = 1)
+  )
+  from chamados c left join clientes cl on cl.id = c.cliente_id
+  where c.relatorio_token = p_token and c.status = 'concluido';
+$$;
+
+-- Depoimentos para o site: só os que o cliente autorizou e o admin destacou
+create or replace function public.avaliacoes_publicas()
+returns table (nota int, comentario text, nome text, servico text, data date)
+language sql stable security definer set search_path = public as $$
+  select c.avaliacao_nota, c.avaliacao_comentario,
+         case when cl.tipo in ('condominio', 'empresa') then cl.nome
+              else split_part(trim(split_part(coalesce(cl.nome, c.nome_solicitante), '—', 1)), ' ', 1) end,
+         c.servico, (c.avaliacao_em at time zone 'America/Sao_Paulo')::date
+  from chamados c left join clientes cl on cl.id = c.cliente_id
+  where c.avaliacao_destaque and c.avaliacao_autoriza and c.avaliacao_nota >= 4 and c.avaliacao_comentario is not null
+  order by c.avaliacao_em desc
+  limit 9;
+$$;
+
+revoke all on function public.avaliar_servico(text, int, text, boolean) from public;
+revoke all on function public.avaliacoes_publicas() from public;
+grant execute on function public.avaliar_servico(text, int, text, boolean) to anon, authenticated;
+grant execute on function public.avaliacoes_publicas() to anon, authenticated;

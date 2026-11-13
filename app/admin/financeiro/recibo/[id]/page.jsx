@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Printer, Leaf } from 'lucide-react'
+import { Printer } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import { supabase } from '@/lib/supabase'
 import { formatarMoeda, formatarData, valorPorExtenso } from '@/lib/constantes'
@@ -34,7 +34,7 @@ export default function Recibo() {
       <div className="rounded-2xl bg-white p-8 ring-1 ring-slate-200 print:p-0 print:ring-0">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-marca-600 text-white"><Leaf size={22} /></div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-marca-600 text-white"><span className="text-[15px] font-extrabold tracking-tight">RD</span></div>
             <div>
               <div className="text-lg font-semibold text-slate-900">{empresa.nome || 'Grupo RD'}</div>
               <div className="text-xs text-slate-500">

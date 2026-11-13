@@ -99,6 +99,21 @@ export async function POST(req) {
     return ok({ enviados: n })
   }
 
+  // 3) Cliente avaliou o serviço -> avisa os admins (uma vez só)
+  if (corpo.tipo === 'avaliacao') {
+    const { data: c } = await sb.from('chamados')
+      .select('id, protocolo, nome_solicitante, avaliacao_nota, avaliacao_em, avaliacao_avisada_em')
+      .eq('relatorio_token', String(corpo.token || '')).maybeSingle()
+    if (!c || !c.avaliacao_em || c.avaliacao_avisada_em || agora - new Date(c.avaliacao_em).getTime() > RECENTE_MS) return ok()
+    await sb.from('chamados').update({ avaliacao_avisada_em: new Date().toISOString() }).eq('id', c.id)
+    const n = await enviar(sb, await admins(sb), {
+      titulo: `Nova avaliação ${'★'.repeat(c.avaliacao_nota)}${'☆'.repeat(5 - c.avaliacao_nota)}`,
+      corpo: `${c.nome_solicitante} avaliou o serviço #${c.protocolo}.`,
+      url: '/admin/avaliacoes',
+    })
+    return ok({ enviados: n })
+  }
+
   // Os próximos exigem login
   const eu = await usuarioLogado(req, sb)
   if (!eu) return NextResponse.json({ erro: 'Acesso negado.' }, { status: 403 })
