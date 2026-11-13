@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Phone, MapPin, MessageCircle, Loader2, Check, Users, AlertTriangle, Send, Trash2 } from 'lucide-react'
+import { ArrowLeft, Phone, MapPin, MessageCircle, Loader2, Check, Users, AlertTriangle, Send, Trash2, ExternalLink } from 'lucide-react'
 import Carregando from '@/components/Carregando'
 import StatusBadge from '@/components/StatusBadge'
 import { Galeria } from '@/components/Arquivos'
@@ -219,14 +219,38 @@ export default function DetalheChamado() {
             </div>
           </section>
 
-          {(chamado.relatorio_equipe || chamado.fotos_conclusao?.length > 0) && (
+          {(chamado.checkin_em || chamado.relatorio_equipe || chamado.fotos_conclusao?.length > 0) && (
             <section className="card p-5">
-              <h3 className="text-sm font-semibold text-slate-900">Relatório da equipe</h3>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{chamado.relatorio_equipe || '—'}</p>
-              <h3 className="mt-5 text-sm font-semibold text-slate-900">Fotos do serviço</h3>
-              <div className="mt-2"><Galeria links={chamado.fotos_conclusao} /></div>
-              {chamado.concluido_em && (
-                <p className="mt-4 text-xs text-slate-400">Concluído em {formatarData(chamado.concluido_em, true)}</p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-slate-900">Relatório da equipe</h3>
+                {chamado.status === 'concluido' && chamado.relatorio_token && (
+                  <div className="flex gap-2">
+                    <a href={`/relatorio/${chamado.relatorio_token}`} target="_blank" rel="noreferrer" className="btn-secundario px-3 py-1.5"><ExternalLink size={14} /> Abrir / PDF</a>
+                    <button onClick={() => enviarWhats(mensagens.find((m) => m.chave === 'concluido').texto)} className="btn-primario px-3 py-1.5">
+                      <MessageCircle size={14} /> Enviar ao cliente
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                {chamado.checkin_em && <span>Chegada: <strong>{new Date(chamado.checkin_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</strong>{chamado.checkin_local && <> · <a className="text-marca-700 underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${chamado.checkin_local.lat},${chamado.checkin_local.lng}`}>local</a></>}</span>}
+                {chamado.checkout_em && <span>Saída: <strong>{new Date(chamado.checkout_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</strong></span>}
+                {chamado.checklist?.length > 0 && <span>Checklist: <strong>{chamado.checklist.filter((i) => i.feito).length}/{chamado.checklist.length}</strong></span>}
+                {chamado.status === 'concluido' && <span>Assinatura: <strong>{chamado.assinatura_nome || 'sem assinatura'}</strong></span>}
+              </div>
+              {chamado.relatorio_equipe && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600">{chamado.relatorio_equipe}</p>}
+              {chamado.fotos_antes?.length > 0 && (<>
+                <h4 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Antes</h4>
+                <div className="mt-2"><Galeria links={chamado.fotos_antes} /></div>
+              </>)}
+              {chamado.fotos_conclusao?.length > 0 && (<>
+                <h4 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">Depois</h4>
+                <div className="mt-2"><Galeria links={chamado.fotos_conclusao} /></div>
+              </>)}
+              {chamado.assinatura_url && (
+                <div className="mt-4 inline-block rounded-xl bg-slate-50 p-2 ring-1 ring-slate-200">
+                  <img src={chamado.assinatura_url} alt="Assinatura" className="h-16" />
+                </div>
               )}
             </section>
           )}

@@ -590,3 +590,104 @@ revoke all on function public.gerar_servicos_contratos(int) from public;
 revoke all on function public.gerar_cobrancas() from public;
 grant execute on function public.gerar_servicos_contratos(int) to authenticated;
 grant execute on function public.gerar_cobrancas() to authenticated;
+
+-- =====================================================================
+-- RELATÓRIO DO SERVIÇO (chegada, checklist, fotos, assinatura)
+-- =====================================================================
+alter table public.chamados add column if not exists checkin_em       timestamptz;
+alter table public.chamados add column if not exists checkin_local    jsonb;
+alter table public.chamados add column if not exists checkout_em      timestamptz;
+alter table public.chamados add column if not exists checkout_local   jsonb;
+alter table public.chamados add column if not exists checklist        jsonb not null default '[]';
+alter table public.chamados add column if not exists fotos_antes      text[] not null default '{}';
+alter table public.chamados add column if not exists assinatura_url   text;
+alter table public.chamados add column if not exists assinatura_nome  text;
+alter table public.chamados add column if not exists relatorio_token  text unique default replace(gen_random_uuid()::text, '-', '');
+update public.chamados set relatorio_token = replace(gen_random_uuid()::text, '-', '') where relatorio_token is null;
+
+create or replace function public.local_json(p_lat double precision, p_lng double precision, p_precisao double precision)
+returns jsonb language sql immutable as $$
+  select case when p_lat is null or p_lng is null then null
+    else jsonb_build_object('lat', p_lat, 'lng', p_lng, 'precisao', p_precisao) end;
+$$;
+
+-- Funcionário chegou no local
+create or replace function public.registrar_chegada(p_id uuid, p_lat double precision default null,
+  p_lng double precision default null, p_precisao double precision default null) returns timestamptz
+language plpgsql security definer set search_path = public as $$
+declare v timestamptz;
+begin
+  if not public.is_membro(p_id) then raise exception 'Você não faz parte da equipe deste serviço.'; end if;
+  update chamados set
+    checkin_em = coalesce(checkin_em, now()),
+    checkin_local = coalesce(checkin_local, public.local_json(p_lat, p_lng, p_precisao)),
+    status = case when status in ('aberto', 'agendado') then 'em_andamento' else status end
+  where id = p_id and status not in ('concluido', 'cancelado')
+  returning checkin_em into v;
+  if v is null then raise exception 'Este serviço já foi encerrado.'; end if;
+  return v;
+end $$;
+
+-- Salva o andamento: checklist, resumo e fotos (antes/depois)
+create or replace function public.salvar_relatorio(p_id uuid, p_checklist jsonb default null, p_relatorio text default null,
+  p_fotos_antes text[] default '{}', p_fotos_depois text[] default '{}') returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_membro(p_id) then raise exception 'Você não faz parte da equipe deste serviço.'; end if;
+  update chamados set
+    checklist        = coalesce(p_checklist, checklist),
+    relatorio_equipe = coalesce(nullif(trim(p_relatorio), ''), relatorio_equipe),
+    fotos_antes      = fotos_antes || coalesce(p_fotos_antes, '{}'),
+    fotos_conclusao  = fotos_conclusao || coalesce(p_fotos_depois, '{}')
+  where id = p_id and status not in ('concluido', 'cancelado');
+end $$;
+
+-- Conclui com saída, assinatura e o restante do relatório
+create or replace function public.concluir_servico(p_id uuid, p_checklist jsonb default null, p_relatorio text default null,
+  p_fotos_depois text[] default '{}', p_assinatura_url text default null, p_assinatura_nome text default null,
+  p_lat double precision default null, p_lng double precision default null, p_precisao double precision default null)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_membro(p_id) then raise exception 'Você não faz parte da equipe deste serviço.'; end if;
+  update chamados set
+    checklist        = coalesce(p_checklist, checklist),
+    relatorio_equipe = coalesce(nullif(trim(p_relatorio), ''), relatorio_equipe),
+    fotos_conclusao  = fotos_conclusao || coalesce(p_fotos_depois, '{}'),
+    assinatura_url   = coalesce(p_assinatura_url, assinatura_url),
+    assinatura_nome  = coalesce(nullif(trim(p_assinatura_nome), ''), assinatura_nome),
+    checkin_em       = coalesce(checkin_em, now()),
+    checkout_em      = now(),
+    checkout_local   = public.local_json(p_lat, p_lng, p_precisao),
+    status           = 'concluido',
+    concluido_em     = now()
+  where id = p_id and status not in ('concluido', 'cancelado');
+  if not found then raise exception 'Este serviço já foi encerrado.'; end if;
+end $$;
+
+-- Relatório público (link para o cliente / síndico), só depois de concluído
+create or replace function public.ver_relatorio(p_token text) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'protocolo', c.protocolo, 'servico', c.servico, 'descricao', c.descricao,
+    'cliente', coalesce(cl.nome, c.nome_solicitante), 'endereco', c.endereco,
+    'data_agendada', c.data_agendada, 'checkin_em', c.checkin_em, 'checkout_em', c.checkout_em,
+    'checkin_local', c.checkin_local, 'checkout_local', c.checkout_local,
+    'checklist', c.checklist, 'relatorio', c.relatorio_equipe,
+    'fotos_antes', c.fotos_antes, 'fotos_depois', c.fotos_conclusao,
+    'assinatura_url', c.assinatura_url, 'assinatura_nome', c.assinatura_nome,
+    'equipe', (select coalesce(jsonb_agg(p.nome order by p.nome), '[]') from chamado_equipe e join perfis p on p.id = e.funcionario_id where e.chamado_id = c.id),
+    'empresa', (select to_jsonb(e) - 'id' - 'atualizado_em' - 'chave_pix' from empresa e where e.id = 1)
+  )
+  from chamados c left join clientes cl on cl.id = c.cliente_id
+  where c.relatorio_token = p_token and c.status = 'concluido';
+$$;
+
+revoke all on function public.registrar_chegada(uuid, double precision, double precision, double precision) from public;
+revoke all on function public.salvar_relatorio(uuid, jsonb, text, text[], text[]) from public;
+revoke all on function public.concluir_servico(uuid, jsonb, text, text[], text, text, double precision, double precision, double precision) from public;
+revoke all on function public.ver_relatorio(text) from public;
+grant execute on function public.registrar_chegada(uuid, double precision, double precision, double precision) to authenticated;
+grant execute on function public.salvar_relatorio(uuid, jsonb, text, text[], text[]) to authenticated;
+grant execute on function public.concluir_servico(uuid, jsonb, text, text[], text, text, double precision, double precision, double precision) to authenticated;
+grant execute on function public.ver_relatorio(text) to anon, authenticated;
