@@ -7,7 +7,7 @@ export default function Logo({ subtitulo = 'Limpeza · Jardinagem · Reforma · 
         <Leaf size={19} strokeWidth={2.2} />
       </div>
       <div className="leading-tight">
-        <div className="font-semibold text-slate-900">Grupo RD</div>
+        <div className="whitespace-nowrap font-semibold text-slate-900">Grupo RD</div>
         {subtitulo && <div className={`text-xs text-slate-500 ${compacto ? 'hidden sm:block' : ''}`}>{subtitulo}</div>}
       </div>
     </div>

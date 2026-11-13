@@ -11,7 +11,7 @@ export default function CabecalhoPublico() {
         <div className="flex items-center gap-2">
         <BotaoInstalar className="btn-primario px-3 py-2" />
         <Link href="/login" className="btn-secundario px-3 py-2">
-          <UserRound size={16} /> <span className="hidden sm:inline">Área da Equipe</span><span className="sm:hidden">Entrar</span>
+          <UserRound size={16} className="shrink-0" /> <span className="whitespace-nowrap">Área da Equipe</span>
         </Link>
         </div>
       </div>

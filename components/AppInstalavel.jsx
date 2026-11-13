@@ -51,8 +51,8 @@ export function BotaoInstalar({ className = '' }) {
 
   return (
     <>
-      <button type="button" onClick={instalar} className={className || 'btn-primario px-3 py-2'}>
-        <Download size={16} /> <span className="whitespace-nowrap">Instalar<span className="hidden sm:inline"> app</span></span>
+      <button type="button" onClick={instalar} aria-label="Instalar app" title="Instalar app" className={className || 'btn-primario px-3 py-2'}>
+        <Download size={16} className="shrink-0" /> <span className="hidden whitespace-nowrap sm:inline">Instalar app</span>
       </button>
 
       {ajuda && createPortal(
